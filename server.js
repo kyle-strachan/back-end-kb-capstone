@@ -4,6 +4,8 @@ import cookieParser from "cookie-parser";
 import "dotenv/config";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import configRoutes from "./routes/configRoutes.js";
+import errorHandler from "./middleware/errorHandler.js";
 
 // import { rateLimitMiddleware } // Add later
 
@@ -42,12 +44,16 @@ app.use((req, res, next) => {
 // Config routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/config", configRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
     error: "API route not defined. See documentation for public endpoints.",
   });
 });
+
+// Error handler
+app.use(errorHandler);
 
 // Database connection and start server
 mongoose

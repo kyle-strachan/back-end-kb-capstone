@@ -1,17 +1,17 @@
 import mongoose from "mongoose";
 
-const departmentSchema = new mongoose.Schema({
-  departmentName: {
+const locationSchema = new mongoose.Schema({
+  location: {
     type: String,
     required: true,
     unique: true,
     trim: true,
   },
-  isAssignable: {
+  isActive: {
     type: Boolean,
     required: true,
     default: true,
   },
 });
 
-export default mongoose.model("Department", departmentSchema);
+export default mongoose.model("Location", locationSchema);
