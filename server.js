@@ -2,6 +2,8 @@ import express from "express";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import "dotenv/config";
+import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 // import { rateLimitMiddleware } // Add later
 
@@ -38,7 +40,8 @@ app.use((req, res, next) => {
 });
 
 // Config routes
-// app.use("/", jotRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
