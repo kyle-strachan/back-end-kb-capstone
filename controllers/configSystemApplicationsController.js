@@ -1,12 +1,79 @@
-import SystemCategory from "../models/configSystemCategories.js";
+import SystemApplication from "../models/configSystemApplications.js";
+import { isValidObjectId, validateObjectIdArray } from "../utils/validation.js";
 
-export async function newSystemCategory(req, res, next) {
+export async function newSystemApplication(req, res, next) {
   try {
-    const { category } = req.body;
-    await SystemCategory.create({
+    const { name, category, isActive, adminUser, sendEmail, description } =
+      req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: "Application name is required." });
+    }
+
+    if (!isValidObjectId(category)) {
+      return res.status(400).json({ message: "Category is required." });
+    }
+
+    const minimumAdminUser = 0;
+    const adminUserError = validateObjectIdArray(
+      adminUser,
+      "AdminUser",
+      minimumAdminUser
+    );
+    if (adminUserError)
+      return res.status(400).json({ message: `${adminUserError}` });
+
+    await SystemApplication.create({
+      name,
       category,
+      isActive,
+      adminUser,
+      sendEmail,
+      description,
     });
-    res.status(200).json({ message: `${category} successfully created.` });
+    res.status(201).json({ message: `${name} successfully created.` });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function editSystemApplication(req, res, next) {
+  try {
+    const { name, category, isActive, adminUser, sendEmail, description } =
+      req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: "Application name is required." });
+    }
+
+    if (!isValidObjectId(category)) {
+      return res
+        .status(400)
+        .json({ message: "Valid Category ID is required." });
+    }
+
+    const minimumAdminUser = 0;
+    const adminUserError = validateObjectIdArray(
+      adminUser,
+      "AdminUser",
+      minimumAdminUser
+    );
+    if (adminUserError)
+      return res.status(400).json({ message: `${adminUserError}` });
+
+    const modifiedSystem = await SystemApplication.findByIdAndUpdate(
+      req.params.id,
+      { name, category, isActive, adminUser, sendEmail, description },
+      { runValidators: true, new: true }
+    );
+
+    if (!modifiedSystem) {
+      return res.status(404).json({ message: "System application not found." });
+    }
+
+    res
+      .status(200)
+      .json({ message: `${modifiedSystem.name} successfully updated.` });
   } catch (error) {
     next(error);
   }
