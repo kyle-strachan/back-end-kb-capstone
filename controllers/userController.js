@@ -36,8 +36,9 @@ export async function registerUser(req, res, next) {
       "Location",
       minimumLocations
     );
-    if (locationError)
+    if (locationError) {
       return res.status(400).json({ message: `${locationError}` });
+    }
 
     const minimumDepartments = 1;
     const departmentError = validateObjectIdArray(
@@ -54,8 +55,9 @@ export async function registerUser(req, res, next) {
       "Permission",
       minimumPermissions
     );
-    if (permissionsError)
+    if (permissionsError) {
       return res.status(400).json({ message: `${permissionsError}` });
+    }
 
     await User.create({
       username,
@@ -67,7 +69,9 @@ export async function registerUser(req, res, next) {
       passwordHash: password,
       permissions,
     });
-    res.status(200).json({ message: `${username} successfully created.` });
+    return res
+      .status(200)
+      .json({ message: `${username} successfully created.` });
   } catch (error) {
     next(error);
   }
@@ -93,8 +97,9 @@ export async function editUser(req, res, next) {
       "Location",
       minimumLocations
     );
-    if (locationError)
+    if (locationError) {
       return res.status(400).json({ message: `${locationError}` });
+    }
 
     const minimumDepartments = 1;
     const departmentError = validateObjectIdArray(
@@ -102,8 +107,9 @@ export async function editUser(req, res, next) {
       "Department",
       minimumDepartments
     );
-    if (departmentError)
+    if (departmentError) {
       return res.status(400).json({ message: `${departmentError}` });
+    }
 
     const minimumPermissions = 0;
     const permissionsError = validateObjectIdArray(
@@ -111,8 +117,9 @@ export async function editUser(req, res, next) {
       "Permission",
       minimumPermissions
     );
-    if (permissionsError)
+    if (permissionsError) {
       return res.status(400).json({ message: `${permissionsError}` });
+    }
 
     const editUser = await User.findOneAndUpdate(
       { _id: req.params.id },
@@ -124,7 +131,7 @@ export async function editUser(req, res, next) {
       res.status(400).json({ message: "User not found." });
     }
 
-    res
+    return res
       .status(200)
       .json({ message: `${editUser.username} has been updated successfully.` });
   } catch (error) {

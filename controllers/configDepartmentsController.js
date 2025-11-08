@@ -1,12 +1,26 @@
 import Department from "../models/configDepartments.js";
 
+export async function getDepartments(req, res, next) {
+  try {
+    const departments = await Department.find().sort({ department: 1 });
+    if (!departments || departments.length === 0) {
+      return res.status(404).json({ message: `No departments found.` });
+    }
+    return res.status(200).json(departments);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function newDepartment(req, res, next) {
   try {
     const { department } = req.body;
     await Department.create({
       department,
     });
-    res.status(200).json({ message: `${department} successfully created.` });
+    return res
+      .status(200)
+      .json({ message: `${department} successfully created.` });
   } catch (error) {
     next(error);
   }
@@ -25,7 +39,7 @@ export function toggleDepartmentIsActive(changeTo) {
       department.isActive = changeTo;
       await department.save();
 
-      res
+      return res
         .status(200)
         .json({ message: `Department status successfully changed.` });
     } catch (error) {
