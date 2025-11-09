@@ -12,13 +12,9 @@ const activeAccessAssignmentSchema = new mongoose.Schema(
       ref: "SystemApplication",
       required: true,
     },
-    status: {
-      type: String,
-      enum: ["Active", "Revoked"],
-      required: true,
-    },
-    completedAt: {
+    activeAt: {
       type: Date,
+      default: Date.now,
     },
     completedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -26,10 +22,6 @@ const activeAccessAssignmentSchema = new mongoose.Schema(
       default: null,
     },
     notes: {
-      type: String,
-      trim: true,
-    },
-    changeReason: {
       type: String,
       trim: true,
     },

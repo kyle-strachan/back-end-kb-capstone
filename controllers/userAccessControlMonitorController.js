@@ -1,37 +1,22 @@
 import ActiveAccessAssignment from "../models/activeAccessAssignments.js";
 import AccessRequest from "../models/accessRequests.js";
 import SystemApplication from "../models/configSystemApplications.js";
-import { isValidObjectId, validateObjectIdArray } from "../utils/validation.js";
+import { isValidObjectId } from "../utils/validation.js";
 
-export async function getAccessAssignments(req, res, next) {
+export async function getActiveAccessAssignments(req, res, next) {
   // Single route accepts multiple filters
   try {
-    const {
-      userId,
-      requestType,
-      requestedAfter,
-      requestedBefore,
-      status,
-      applicationId,
-    } = req.query;
+    const { userId, applicationId } = req.query;
 
     const filter = {};
 
     if (isValidObjectId(userId)) filter.userId = userId;
-    if (requestType) filter.requestType = requestType;
-    if (status) filter.status = status;
     if (isValidObjectId(applicationId)) filter.applicationId = applicationId;
-    if (requestedAfter || requestedBefore) {
-      filter.requestedAt = {};
-      if (requestedAfter) filter.requestedAt.$gte = new Date(requestedAfter);
-      if (requestedBefore) filter.requestedAt.$lte = new Date(requestedBefore);
-    }
 
     const assignments = await ActiveAccessAssignment.find(filter)
       .populate("userId")
-      .populate("requestedBy")
-      .populate("applicationId")
-      .sort({ requestedAt: -1 });
+      .populate("completedBy")
+      .populate("applicationId");
 
     if (assignments.length === 0) {
       return res.status(404).json({ message: "No access assignments found." });
@@ -97,7 +82,8 @@ export async function newAccessRequest(req, res, next) {
     const { userId, requestType, requestedBy, applicationId, requestNote } =
       req.body;
 
-    const trimmedRequestedNote = requestNote ? requestNote.trim() : null;
+    const trimmedRequestedNote =
+      typeof requestNote === "string" ? requestNote.trim() : null;
 
     if (!isValidObjectId(userId)) {
       return res
@@ -140,8 +126,7 @@ export async function newAccessRequest(req, res, next) {
 
 export async function updateAccessRequest(req, res, next) {
   try {
-    const { userId, applicationId, approvedBy, status, notes, changeReason } =
-      req.body;
+    const { userId, applicationId, approvedBy, status, notes } = req.body;
 
     // Validate request
     if (!isValidObjectId(userId)) {
@@ -167,6 +152,8 @@ export async function updateAccessRequest(req, res, next) {
       return res.status(400).json({ message: "Invalid new status provided." });
     }
 
+    const trimmedNotes = typeof notes === "string" ? notes.trim() : null;
+
     // Verify user making update to request is an admin of the application being changed
     const isApproverAdminOfSystem = await SystemApplication.findOne({
       _id: applicationId,
@@ -179,6 +166,7 @@ export async function updateAccessRequest(req, res, next) {
       });
     }
 
+    debugger;
     // Only allow updates of open/"new" status requests.
     const updatedRequest = await AccessRequest.findOneAndUpdate(
       { _id: req.params.id, status: "New" },
@@ -192,15 +180,32 @@ export async function updateAccessRequest(req, res, next) {
       });
     }
 
-    if (status === "Approved" || status === "Revoked") {
-      await insertAccessAssignment(
+    // Remove any assignment if request update is revoke
+    if (status === "Revoked") {
+      await ActiveAccessAssignment.deleteMany({
         userId,
         applicationId,
-        approvedBy,
-        status,
-        notes,
-        changeReason
-      );
+      });
+    }
+
+    // Add assignment if request update is approved
+    if (status === "Approved") {
+      const existing = await ActiveAccessAssignment.exists({
+        userId,
+        applicationId,
+      });
+      if (existing) {
+        return res.status(400).json({
+          message: `User already has access to this application.`,
+        });
+      } else {
+        await ActiveAccessAssignment.create({
+          userId,
+          applicationId,
+          completedBy: approvedBy,
+          notes: trimmedNotes,
+        });
+      }
     }
 
     return res
@@ -209,26 +214,4 @@ export async function updateAccessRequest(req, res, next) {
   } catch (error) {
     next(error);
   }
-}
-
-// Insert record for active or revoked, per system, per user
-async function insertAccessAssignment(
-  userId,
-  applicationId,
-  completedBy,
-  status,
-  notes = null,
-  changeReason = null
-) {
-  // userId, applicationId, status, completedBy already validated
-  const trimmedNotes = notes ? notes.trim() : null;
-  const trimmedChangeReason = changeReason ? changeReason.trim() : null;
-  return ActiveAccessAssignment.create({
-    userId,
-    applicationId,
-    status,
-    completedBy,
-    notes: trimmedNotes,
-    changeReason: trimmedChangeReason,
-  });
 }

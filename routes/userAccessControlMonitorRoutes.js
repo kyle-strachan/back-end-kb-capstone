@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  getAccessAssignments,
+  getActiveAccessAssignments,
   getAccessRequests,
   newAccessRequest,
   updateAccessRequest,
@@ -12,7 +12,7 @@ import {
 const router = Router();
 
 // Current assignments
-router.get("/access-assignments", getAccessAssignments);
+router.get("/access-assignments", getActiveAccessAssignments);
 
 // Requests
 router.get("/access-requests", getAccessRequests);
