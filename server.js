@@ -5,6 +5,7 @@ import "dotenv/config";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import configRoutes from "./routes/configRoutes.js";
+import userAccessControlMonitorRoutes from "./routes/userAccessControlMonitorRoutes.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 // import { rateLimitMiddleware } // Add later
@@ -45,6 +46,7 @@ app.use((req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/config", configRoutes);
+app.use("/api/uac-monitor", userAccessControlMonitorRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

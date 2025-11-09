@@ -32,7 +32,7 @@ const accessRequestSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["New", "Approved", "Denied", "Withdrawn"],
+      enum: ["New", "Approved", "Denied", "Withdrawn", "Revoked"],
       required: true,
       default: "New",
     },

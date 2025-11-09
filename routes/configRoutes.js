@@ -29,6 +29,7 @@ import {
   getPlatformRoles,
   newPlatformRole,
 } from "../controllers/configPlatformRolesController.js";
+import { getPermissions } from "../controllers/configPermissionsController.js";
 
 // import { authMiddleware } from ...
 // import { noCache } from ...
@@ -42,14 +43,14 @@ router.patch("/locations/:id/activate", toggleLocationIsActive(true));
 router.patch("/locations/:id/deactivate", toggleLocationIsActive(false));
 
 // Config system categories
-router.get("/systemCategories", getSystemCategories);
-router.post("/systemCategories", newSystemCategory);
-router.patch("/systemCategories/:id", editSystemCategory);
+router.get("/system-categories", getSystemCategories);
+router.post("/system-categories", newSystemCategory);
+router.patch("/system-categories/:id", editSystemCategory);
 
 // Config system applications
-router.get("/systemApplications", getSystemApplications);
-router.post("/systemApplications", newSystemApplication);
-router.patch("/systemApplications/:id", editSystemApplication);
+router.get("/system-applications", getSystemApplications);
+router.post("/system-applications", newSystemApplication);
+router.patch("/system-applications/:id", editSystemApplication);
 
 // Config departments
 router.get("/departments", getDepartments);
@@ -58,13 +59,16 @@ router.patch("/departments/:id/activate", toggleDepartmentIsActive(true));
 router.patch("/departments/:id/deactivate", toggleDepartmentIsActive(false));
 
 // Config business roles
-router.get("/businessRoles", getBusinessRoles);
-router.post("/businessRoles", newBusinessRole);
-router.patch("/businessRoles/:id", editBusinessRole);
+router.get("/business-roles", getBusinessRoles);
+router.post("/business-roles", newBusinessRole);
+router.patch("/business-roles/:id", editBusinessRole);
 
 // Config platform roles
-router.get("/platformRoles", getPlatformRoles);
-router.post("/platformRoles", newPlatformRole);
-router.patch("/platformRoles/:id", editPlatformRole);
+router.get("/platform-roles", getPlatformRoles);
+router.post("/platform-roles", newPlatformRole);
+router.patch("/platform-roles/:id", editPlatformRole);
+
+// Config permissions
+router.get("/permissions", getPermissions);
 
 export default router;

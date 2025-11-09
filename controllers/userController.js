@@ -4,6 +4,7 @@ import { validateObjectIdArray } from "../utils/validation.js";
 export async function getUsers(req, res, next) {
   try {
     res.status(200).json({ message: "List of users." });
+    // Must exclude passwordHash!!
   } catch (error) {
     next(error);
   }

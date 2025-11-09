@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const accessAssignmentSchema = new mongoose.Schema(
+const activeAccessAssignmentSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -41,4 +41,7 @@ const accessAssignmentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("AccessAssignment", accessAssignmentSchema);
+export default mongoose.model(
+  "ActiveAccessAssignment",
+  activeAccessAssignmentSchema
+);
