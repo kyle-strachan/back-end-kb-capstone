@@ -2,37 +2,47 @@ import DepartmentCategory from "../models/configDepartmentCategories.js";
 
 export async function getDepartmentCategories(req, res, next) {
   try {
+    const { user } = req;
     const { permissions, department } = req.user;
     let filter = {};
 
-    const canViewAll = user.permissions.includes(
+    console.log(
+      "Type:",
+      typeof permissions,
+      "isArray:",
+      Array.isArray(permissions),
+      "value:",
+      permissions
+    );
+
+    const permissionNames = user.permissions.map((p) => p.permissionName);
+    const canViewAll = permissionNames.includes(
       "configCanViewAllDepartmentCategories"
     );
-    const canViewOwn = user.permissions.includes(
+    const canViewOwn = permissionNames.includes(
       "configCanViewOwnDepartmentCategories"
     );
-    const isSuperAdmin = user.permissions.includes("isSuperAdmin");
+    const isSuperAdmin = permissionNames.includes("isSuperAdmin");
 
     if (canViewAll || isSuperAdmin) {
-      // no filter required
-      filter = {};
+      filter = {}; // no filter required
     } else if (
       canViewOwn &&
       Array.isArray(department) &&
       department.length > 0
     ) {
-      // limit to user's own department
-      filter = { departmentId: { $in: department } };
+      filter = { departmentId: { $in: department } }; // limit to user's own department
     } else {
       return res.status(403).json({ message: "Access denied." });
     }
 
-    // TODO: Front end must handle empty results.
+    // debugger;
     const categories = await DepartmentCategory.find(filter)
-      .populate("departmentId", "name") // populate department name only
+      .populate("departmentId", "name")
       .sort({ categoryName: 1 });
 
-    return res.status(200).json(categories);
+    console.log(categories);
+    return res.status(200).json({ categories });
   } catch (error) {
     next(error);
   }

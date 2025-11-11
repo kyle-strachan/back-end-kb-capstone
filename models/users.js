@@ -89,6 +89,7 @@ const userSchema = new mongoose.Schema({
         ref: "Permission",
       },
     ],
+    default: [],
   },
   isSuperAdmin: {
     type: Boolean,
