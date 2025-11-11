@@ -30,8 +30,12 @@ import {
   newPlatformRole,
 } from "../controllers/configPlatformRolesController.js";
 import { getPermissions } from "../controllers/configPermissionsController.js";
-
-// import { authMiddleware } from ...
+import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
+import {
+  editDepartmentCategory,
+  getDepartmentCategories,
+  newDepartmentCategory,
+} from "../controllers/configDepartmentCategoriesController.js";
 // import { noCache } from ...
 
 const router = Router();
@@ -57,6 +61,26 @@ router.get("/departments", getDepartments);
 router.post("/departments", newDepartment);
 router.patch("/departments/:id/activate", toggleDepartmentIsActive(true));
 router.patch("/departments/:id/deactivate", toggleDepartmentIsActive(false));
+
+// Config department categories
+router.get(
+  "/department-categories",
+  authMiddleware,
+  attachUser,
+  getDepartmentCategories
+);
+router.post(
+  "/department-categories",
+  authMiddleware,
+  attachUser,
+  newDepartmentCategory
+);
+router.patch(
+  "/department-categories/:id",
+  authMiddleware,
+  attachUser,
+  editDepartmentCategory
+);
 
 // Config business roles
 router.get("/business-roles", getBusinessRoles);

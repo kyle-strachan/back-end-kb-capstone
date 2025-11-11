@@ -1,5 +1,7 @@
 import Department from "../models/configDepartments.js";
 
+// ADMIN ONLY
+
 export async function getDepartments(req, res, next) {
   try {
     const departments = await Department.find().sort({ department: 1 });

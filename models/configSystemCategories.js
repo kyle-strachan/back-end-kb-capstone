@@ -7,6 +7,10 @@ const systemCategorySchema = new mongoose.Schema({
     unique: true,
     trim: true,
   },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 export default mongoose.model("SystemCategory", systemCategorySchema);

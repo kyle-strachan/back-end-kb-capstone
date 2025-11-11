@@ -76,9 +76,11 @@ const userSchema = new mongoose.Schema({
   },
   failedLoginCount: {
     type: Number,
+    default: 0,
   },
   tokenVersion: {
     type: Number,
+    default: 0,
   },
   permissions: {
     type: [

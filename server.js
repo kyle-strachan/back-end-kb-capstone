@@ -3,8 +3,9 @@ import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import "dotenv/config";
 import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
 import configRoutes from "./routes/configRoutes.js";
+import docRoutes from "./routes/docRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import userAccessControlMonitorRoutes from "./routes/userAccessControlMonitorRoutes.js";
 import errorHandler from "./middleware/errorHandler.js";
 
@@ -44,8 +45,9 @@ app.use((req, res, next) => {
 
 // Config routes
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
 app.use("/api/config", configRoutes);
+app.use("/api/docs", docRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/uac-monitor", userAccessControlMonitorRoutes);
 
 app.use((req, res) => {

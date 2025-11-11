@@ -1,5 +1,7 @@
 import Permission from "../models/configPermissions.js";
 
+// FOR DEV ONLY, WILL LIST PERMISSIONS OF USER
+
 export async function getPermissions(req, res, next) {
   try {
     const permissions = await Permission.find().sort({ name: 1 });
