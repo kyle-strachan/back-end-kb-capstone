@@ -35,6 +35,11 @@ export async function login(req, res) {
       return res.status(400).json({ message: "User does not exist." });
     }
 
+    // Test user is active
+    if (!user.isActive) {
+      return res.status(403).json({ message: "User does not active." });
+    }
+
     // Test if password matches
     const isValidPassword = await user.isValidPassword(trimmedPassword);
     if (!isValidPassword) {
@@ -67,7 +72,17 @@ export async function login(req, res) {
       maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
-    return res.status(200).json({ message: "Login successful." });
+    // Only necessary fields returned to front end
+    return res.status(200).json({
+      message: "Login successful.",
+      user: {
+        _id: user._id,
+        fullName: user.fullName,
+        username: user.username,
+        department: user.department,
+        location: user.location,
+      },
+    });
   } catch (error) {
     return res
       .status(500)
