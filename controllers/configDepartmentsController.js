@@ -1,14 +1,15 @@
 import Department from "../models/configDepartments.js";
 
-// ADMIN ONLY
+const minimumDepartmentCharacterLength = 3;
 
 export async function getDepartments(req, res, next) {
   try {
+    // debugger;
     const departments = await Department.find().sort({ department: 1 });
     if (!departments || departments.length === 0) {
       return res.status(404).json({ message: `No departments found.` });
     }
-    return res.status(200).json(departments);
+    return res.status(200).json({ departments });
   } catch (error) {
     next(error);
   }
@@ -28,24 +29,57 @@ export async function newDepartment(req, res, next) {
   }
 }
 
-export function toggleDepartmentIsActive(changeTo) {
-  return async function (req, res, next) {
-    try {
-      const { id } = req.params;
-      const department = await Department.findById(id);
+export async function editDepartments(req, res, next) {
+  try {
+    const updates = req.body.updates;
 
-      if (!department) {
-        res.status(404).json({ message: "Department not found" });
+    if (!Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({ message: "No updates provided." });
+    }
+
+    const results = [];
+
+    // Validate batch promises
+    for (const update of updates) {
+      if (!update._id || typeof update.department !== "string") {
+        results.push({
+          id: update._id,
+          success: false,
+          message: "Invalid ID or department name.",
+        });
+        continue;
+      }
+      // Check department name is long enough.
+      // debugger;
+      if (update.department.trim().length < minimumDepartmentCharacterLength) {
+        results.push({
+          id: update._id,
+          success: false,
+          message: `Department name must be at least ${minimumDepartmentCharacterLength} characters`,
+        });
+        continue;
       }
 
-      department.isActive = changeTo;
-      await department.save();
-
-      return res
-        .status(200)
-        .json({ message: `Department status successfully changed.` });
-    } catch (error) {
-      next(error);
+      try {
+        await Department.findByIdAndUpdate(update._id, {
+          department: update.department.trim(),
+          isActive: !!update.isActive, // in case field is not changed and is null
+        });
+        results.push({ id: update._id, success: true });
+      } catch (error) {
+        results.push({
+          id: update._id,
+          success: false,
+          message: error.message,
+        });
+      }
     }
-  };
+
+    res.status(200).json({
+      message: "Batch processed.",
+      results,
+    });
+  } catch (error) {
+    next(error);
+  }
 }

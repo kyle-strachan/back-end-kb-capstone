@@ -12,7 +12,7 @@ import {
 import {
   getDepartments,
   newDepartment,
-  toggleDepartmentIsActive,
+  editDepartments,
 } from "../controllers/configDepartmentsController.js";
 import {
   editSystemApplication,
@@ -59,8 +59,7 @@ router.patch("/system-applications/:id", editSystemApplication);
 // Config departments
 router.get("/departments", getDepartments);
 router.post("/departments", newDepartment);
-router.patch("/departments/:id/activate", toggleDepartmentIsActive(true));
-router.patch("/departments/:id/deactivate", toggleDepartmentIsActive(false));
+router.put("/departments", authMiddleware, attachUser, editDepartments);
 
 // Config department categories
 router.get(

@@ -3,17 +3,8 @@ import DepartmentCategory from "../models/configDepartmentCategories.js";
 export async function getDepartmentCategories(req, res, next) {
   try {
     const { user } = req;
-    const { permissions, department } = req.user;
+    // const { permissions, department } = req.user;
     let filter = {};
-
-    console.log(
-      "Type:",
-      typeof permissions,
-      "isArray:",
-      Array.isArray(permissions),
-      "value:",
-      permissions
-    );
 
     const permissionNames = user.permissions.map((p) => p.permissionName);
     const canViewAll = permissionNames.includes(
@@ -28,10 +19,10 @@ export async function getDepartmentCategories(req, res, next) {
       filter = {}; // no filter required
     } else if (
       canViewOwn &&
-      Array.isArray(department) &&
-      department.length > 0
+      Array.isArray(user.department) &&
+      user.department.length > 0
     ) {
-      filter = { departmentId: { $in: department } }; // limit to user's own department
+      filter = { departmentId: { $in: user.department } }; // limit to user's own department
     } else {
       return res.status(403).json({ message: "Access denied." });
     }
@@ -41,7 +32,7 @@ export async function getDepartmentCategories(req, res, next) {
       .populate("departmentId", "name")
       .sort({ categoryName: 1 });
 
-    console.log(categories);
+    // console.log(categories);
     return res.status(200).json({ categories });
   } catch (error) {
     next(error);
