@@ -8,6 +8,7 @@ import docRoutes from "./routes/docRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import userAccessControlMonitorRoutes from "./routes/userAccessControlMonitorRoutes.js";
 import errorHandler from "./middleware/errorHandler.js";
+import cors from "cors";
 
 // import { rateLimitMiddleware } // Add later
 
@@ -31,6 +32,14 @@ try {
 // App init
 const app = express();
 const PORT = process.env.PORT;
+
+// Keep before routes
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 
 // Middleware
 app.use(cookieParser());
