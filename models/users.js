@@ -97,6 +97,10 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+userSchema.methods.isValidPassword = async function (password) {
+  return await bcrypt.compare(password, this.passwordHash);
+};
+
 userSchema.pre("save", async function (next) {
   if (this.isModified("passwordHash")) {
     const salt = await bcrypt.genSalt(12);
