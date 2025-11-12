@@ -1,8 +1,8 @@
 import { Router } from "express";
 import {
+  editLocations,
   getLocations,
   newLocation,
-  toggleLocationIsActive,
 } from "../controllers/configLocationsController.js";
 import {
   editSystemCategory,
@@ -43,8 +43,7 @@ const router = Router();
 // Config locations
 router.get("/locations", getLocations);
 router.post("/locations", newLocation);
-router.patch("/locations/:id/activate", toggleLocationIsActive(true));
-router.patch("/locations/:id/deactivate", toggleLocationIsActive(false));
+router.put("/locations", authMiddleware, attachUser, editLocations);
 
 // Config system categories
 router.get("/system-categories", getSystemCategories);
