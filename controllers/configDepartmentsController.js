@@ -61,10 +61,22 @@ export async function editDepartments(req, res, next) {
       }
 
       try {
-        await Department.findByIdAndUpdate(update._id, {
-          department: update.department.trim(),
-          isActive: !!update.isActive, // in case field is not changed and is null
-        });
+        const result = await Department.findByIdAndUpdate(
+          update._id,
+          {
+            department: update.department.trim(),
+            isActive: !!update.isActive, // in case field is not changed and is null
+          },
+          { runValidators: true, new: true, strict: "throw" }
+        );
+        if (!result) {
+          results.push({
+            id: update._id,
+            success: false,
+            message: `No matching department ID found.`,
+          });
+          return;
+        }
         results.push({ id: update._id, success: true });
       } catch (error) {
         results.push({
