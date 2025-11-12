@@ -48,7 +48,7 @@ router.put("/locations", authMiddleware, attachUser, editLocations);
 // Config system categories
 router.get("/system-categories", getSystemCategories);
 router.post("/system-categories", newSystemCategory);
-router.patch("/system-categories/:id", editSystemCategory);
+router.put("/system-categories", editSystemCategory);
 
 // Config system applications
 router.get("/system-applications", getSystemApplications);
