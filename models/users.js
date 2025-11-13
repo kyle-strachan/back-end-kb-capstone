@@ -14,17 +14,9 @@ const userSchema = new mongoose.Schema({
     trim: true,
   },
   location: {
-    type: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Location",
-        required: true,
-      },
-    ],
-    validate: {
-      validator: (v) => v.length > 0,
-      message: "User must be associated with at least one location.",
-    },
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Location",
+    required: true,
   },
   department: {
     type: [

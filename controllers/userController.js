@@ -36,15 +36,11 @@ export async function registerUser(req, res, next) {
       return res.status(400).json({ message: "Position is required." });
     }
 
-    const minimumLocations = 1;
-    const locationError = validateObjectIdArray(
-      location,
-      "Location",
-      minimumLocations
-    );
-    if (locationError) {
-      return res.status(400).json({ message: `${locationError}` });
+    if (!location || !location.trim()) {
+      return res.status(400).json({ message: "Location is required." });
     }
+
+    debugger;
 
     const minimumDepartments = 1;
     const departmentError = validateObjectIdArray(
@@ -85,9 +81,17 @@ export async function registerUser(req, res, next) {
 
 export async function editUser(req, res, next) {
   // Admin only to edit any part of user (except username). Password handled separately.
+  // debugger;
   try {
-    const { fullName, location, department, email, position, permissions } =
-      req.body;
+    const {
+      fullName,
+      location,
+      isActive,
+      department,
+      email,
+      position,
+      permissions,
+    } = req.body;
 
     if (!fullName || !fullName.trim()) {
       return res.status(400).json({ message: "Full name is required." });
@@ -97,14 +101,8 @@ export async function editUser(req, res, next) {
       return res.status(400).json({ message: "Position is required." });
     }
 
-    const minimumLocations = 1;
-    const locationError = validateObjectIdArray(
-      location,
-      "Location",
-      minimumLocations
-    );
-    if (locationError) {
-      return res.status(400).json({ message: `${locationError}` });
+    if (!location || !location.trim()) {
+      return res.status(400).json({ message: "Location is required." });
     }
 
     const minimumDepartments = 1;
@@ -127,9 +125,17 @@ export async function editUser(req, res, next) {
       return res.status(400).json({ message: `${permissionsError}` });
     }
 
-    const editUser = await User.findOneAndUpdate(
-      { _id: req.params.id },
-      { fullName, location, department, email, position, permissions },
+    const editUser = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        fullName,
+        location,
+        department,
+        email,
+        position,
+        permissions,
+        isActive,
+      },
       { runValidators: true, new: true }
     );
 
