@@ -41,24 +41,61 @@ import {
 const router = Router();
 
 // Config locations
-router.get("/locations", getLocations);
-router.post("/locations", newLocation);
+router.get("/locations", authMiddleware, attachUser, getLocations);
+router.post("/locations", authMiddleware, attachUser, newLocation);
 router.put("/locations", authMiddleware, attachUser, editLocations);
 
 // Config system categories
-router.get("/system-categories", getSystemCategories);
-router.post("/system-categories", newSystemCategory);
-router.put("/system-categories", editSystemCategory);
+router.get(
+  "/system-categories",
+  authMiddleware,
+  attachUser,
+  getSystemCategories
+);
+router.post(
+  "/system-categories",
+  authMiddleware,
+  attachUser,
+  newSystemCategory
+);
+router.put(
+  "/system-categories",
+  authMiddleware,
+  attachUser,
+  editSystemCategory
+);
 
 // Config system applications
-router.get("/system-applications", getSystemApplications);
-router.post("/system-applications", newSystemApplication);
-router.put("/system-applications/:id", editSystemApplication);
+router.get(
+  "/system-applications",
+  authMiddleware,
+  attachUser,
+  getSystemApplications
+);
+router.post(
+  "/system-applications",
+  authMiddleware,
+  attachUser,
+  newSystemApplication
+);
+router.put(
+  "/system-applications/:id",
+  authMiddleware,
+  attachUser,
+  editSystemApplication
+);
 
 // Config departments
-router.get("/departments", getDepartments);
-router.post("/departments", newDepartment);
-router.put("/departments", authMiddleware, attachUser, editDepartments);
+router.get("/departments", authMiddleware, attachUser, getDepartments);
+router.post("/departments", authMiddleware, attachUser, newDepartment);
+router.put(
+  "/departments",
+  authMiddleware,
+  attachUser,
+  authMiddleware,
+  attachUser,
+  editDepartments
+);
 
 // Config department categories
 router.get(
@@ -81,16 +118,26 @@ router.patch(
 );
 
 // Config business roles
-router.get("/business-roles", getBusinessRoles);
-router.post("/business-roles", newBusinessRole);
-router.patch("/business-roles/:id", editBusinessRole);
+router.get("/business-roles", authMiddleware, attachUser, getBusinessRoles);
+router.post("/business-roles", authMiddleware, attachUser, newBusinessRole);
+router.patch(
+  "/business-roles/:id",
+  authMiddleware,
+  attachUser,
+  editBusinessRole
+);
 
 // Config platform roles
-router.get("/platform-roles", getPlatformRoles);
-router.post("/platform-roles", newPlatformRole);
-router.patch("/platform-roles/:id", editPlatformRole);
+router.get("/platform-roles", authMiddleware, attachUser, getPlatformRoles);
+router.post("/platform-roles", authMiddleware, attachUser, newPlatformRole);
+router.patch(
+  "/platform-roles/:id",
+  authMiddleware,
+  attachUser,
+  editPlatformRole
+);
 
 // Config permissions
-router.get("/permissions", getPermissions);
+router.get("/permissions", authMiddleware, attachUser, getPermissions);
 
 export default router;

@@ -118,6 +118,7 @@ export async function logout(req, res) {
 }
 
 export async function resetPassword(req, res) {
+  debugger;
   try {
     const { userId, newPassword } = req.body;
     const user = await User.findById(userId);
@@ -125,7 +126,8 @@ export async function resetPassword(req, res) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    user.passwordHash = await user.hashPassword(newPassword);
+    // user.passwordHash = await user.hashPassword(newPassword);
+    user.passwordHash = newPassword; // hashing moved to model
     user.tokenVersion += 1;
     await user.save();
 

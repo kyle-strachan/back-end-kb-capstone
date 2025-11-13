@@ -5,18 +5,27 @@ import {
   newAccessRequest,
   updateAccessRequest,
 } from "../controllers/userAccessControlMonitorController.js";
-
-// import { authMiddleware } from ...
+import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
 // import { noCache } from ...
 
 const router = Router();
 
 // Current assignments
-router.get("/access-assignments", getActiveAccessAssignments);
+router.get(
+  "/access-assignments",
+  authMiddleware,
+  attachUser,
+  getActiveAccessAssignments
+);
 
 // Requests
-router.get("/access-requests", getAccessRequests);
-router.post("/access-requests", newAccessRequest);
-router.patch("/access-requests/:id", updateAccessRequest);
+router.get("/access-requests", authMiddleware, attachUser, getAccessRequests);
+router.post("/access-requests", authMiddleware, attachUser, newAccessRequest);
+router.patch(
+  "/access-requests/:id",
+  authMiddleware,
+  attachUser,
+  updateAccessRequest
+);
 
 export default router;
