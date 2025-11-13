@@ -53,7 +53,7 @@ router.put("/system-categories", editSystemCategory);
 // Config system applications
 router.get("/system-applications", getSystemApplications);
 router.post("/system-applications", newSystemApplication);
-router.patch("/system-applications/:id", editSystemApplication);
+router.put("/system-applications/:id", editSystemApplication);
 
 // Config departments
 router.get("/departments", getDepartments);

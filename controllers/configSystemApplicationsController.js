@@ -1,13 +1,24 @@
 import SystemApplication from "../models/configSystemApplications.js";
+import SystemCategory from "../models/configSystemCategories.js";
 import { isValidObjectId, validateObjectIdArray } from "../utils/validation.js";
 
 export async function getSystemApplications(req, res, next) {
+  // debugger;
   try {
     const systemApplications = await SystemApplication.find().sort({ name: 1 });
-    if (!systemApplications || systemApplications.length === 0) {
-      return res.status(404).json({ message: `No applications found.` });
+    const systemCategories = await SystemCategory.find().sort({ name: 1 });
+    // Reject is either are incomplete or empty.
+    if (
+      !systemApplications ||
+      systemApplications.length === 0 ||
+      !systemCategories ||
+      systemCategories.length === 0
+    ) {
+      return res
+        .status(404)
+        .json({ message: `No applications and/or categories found.` });
     }
-    return res.status(200).json(systemApplications);
+    return res.status(200).json({ systemApplications, systemCategories });
   } catch (error) {
     next(error);
   }
@@ -15,10 +26,10 @@ export async function getSystemApplications(req, res, next) {
 
 export async function newSystemApplication(req, res, next) {
   try {
-    const { name, category, isActive, adminUser, sendEmail, description } =
+    const { system, category, isActive, adminUser, sendEmail, description } =
       req.body;
 
-    if (!name || !name.trim()) {
+    if (!system || !system.trim()) {
       return res.status(400).json({ message: "Application name is required." });
     }
 
@@ -32,18 +43,20 @@ export async function newSystemApplication(req, res, next) {
       "AdminUser",
       minimumAdminUser
     );
-    if (adminUserError)
+    if (adminUserError) {
       return res.status(400).json({ message: `${adminUserError}` });
+    }
+    debugger;
 
     await SystemApplication.create({
-      name,
+      system,
       category,
       isActive,
       adminUser,
       sendEmail,
       description,
     });
-    return res.status(201).json({ message: `${name} successfully created.` });
+    return res.status(201).json({ message: `${system} successfully created.` });
   } catch (error) {
     next(error);
   }
@@ -51,10 +64,10 @@ export async function newSystemApplication(req, res, next) {
 
 export async function editSystemApplication(req, res, next) {
   try {
-    const { name, category, isActive, adminUser, sendEmail, description } =
+    const { system, category, isActive, adminUser, sendEmail, description } =
       req.body;
 
-    if (!name || !name.trim()) {
+    if (!system || !system.trim()) {
       return res.status(400).json({ message: "Application name is required." });
     }
 
@@ -76,7 +89,7 @@ export async function editSystemApplication(req, res, next) {
 
     const modifiedSystem = await SystemApplication.findByIdAndUpdate(
       req.params.id,
-      { name, category, isActive, adminUser, sendEmail, description },
+      { system, category, isActive, adminUser, sendEmail, description },
       { runValidators: true, new: true }
     );
 
