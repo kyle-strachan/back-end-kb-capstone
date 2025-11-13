@@ -32,6 +32,7 @@ export async function getAccessRequests(req, res, next) {
   // Single route accepts multiple filters
   // Returns a record of all the *requests*
   try {
+    // debugger;
     // Read query parameters of all possible filters
     const {
       userId,
@@ -64,14 +65,16 @@ export async function getAccessRequests(req, res, next) {
       .populate("userId", "fullName username position")
       .populate("requestedBy", "fullName username position")
       .populate("approvedBy", "fullName username position")
-      .populate("applicationId", "name")
+      .populate("applicationId", "system")
       .sort({ requestedAt: -1 });
 
-    if (accessRequests.length === 0) {
-      return res.status(404).json({ message: "No access requests found." });
-    }
+    // If accessRequests.length === 0 continue to return empty array.
+    // if (accessRequests.length === 0) {
+    //   return res.status(404).json({ message: "No access requests found." });
+    // }
 
-    return res.status(200).json(accessRequests);
+    // debugger;
+    return res.status(200).json({ accessRequests });
   } catch (error) {
     next(error);
   }
