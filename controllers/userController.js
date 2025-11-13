@@ -3,8 +3,13 @@ import { validateObjectIdArray } from "../utils/validation.js";
 
 export async function getUsers(req, res, next) {
   try {
-    res.status(200).json({ message: "List of users." });
-    // Must exclude passwordHash!!
+    const users = await User.find()
+      .select("-passwordHash")
+      .sort({ fullName: 1 });
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: `No users found.` });
+    }
+    return res.status(200).json({ users });
   } catch (error) {
     next(error);
   }
