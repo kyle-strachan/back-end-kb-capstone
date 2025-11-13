@@ -57,7 +57,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/config", configRoutes);
 app.use("/api/docs", docRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/uac-monitor", userAccessControlMonitorRoutes);
+app.use("/api/uac", userAccessControlMonitorRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
