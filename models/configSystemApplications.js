@@ -1,20 +1,15 @@
 import mongoose from "mongoose";
 
 const systemApplicationSchema = new mongoose.Schema({
-  name: {
+  system: {
     type: String,
     required: true,
     unique: true,
     trim: true,
   },
   category: {
-    type: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "SystemCategory",
-      },
-    ],
-    required: true,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "SystemCategory",
   },
   isActive: {
     type: Boolean,
