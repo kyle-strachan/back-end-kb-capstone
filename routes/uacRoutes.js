@@ -4,7 +4,7 @@ import {
   getAccessRequests,
   newAccessRequest,
   updateAccessRequest,
-} from "../controllers/userAccessControlMonitorController.js";
+} from "../controllers/uacController.js";
 import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
 // import { noCache } from ...
 

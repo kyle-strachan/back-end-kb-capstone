@@ -16,6 +16,7 @@ export async function getUsers(req, res, next) {
 }
 
 export async function registerUser(req, res, next) {
+  // TO DO: LOCATION
   try {
     const {
       username,
@@ -40,8 +41,6 @@ export async function registerUser(req, res, next) {
       return res.status(400).json({ message: "Location is required." });
     }
 
-    debugger;
-
     const minimumDepartments = 1;
     const departmentError = validateObjectIdArray(
       department,
@@ -62,12 +61,12 @@ export async function registerUser(req, res, next) {
     }
 
     await User.create({
-      username,
-      fullName,
+      username: username.toLowerCase().trim(),
+      fullName: fullName.trim(),
       location,
       department,
-      email,
-      position,
+      email: email.toLowerCase.trim(),
+      position: position.toLowerCase.trim(),
       passwordHash: password,
       permissions,
     });

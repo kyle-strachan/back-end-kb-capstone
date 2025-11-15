@@ -81,47 +81,89 @@ export async function getAccessRequests(req, res, next) {
 }
 
 export async function newAccessRequest(req, res, next) {
+  // debugger;
   try {
-    const { userId, requestType, requestedBy, applicationId, requestNote } =
-      req.body;
+    const { userId, applicationId, requestNote } = req.body;
+    const requestedBy = req.user._id;
 
     const trimmedRequestedNote =
       typeof requestNote === "string" ? requestNote.trim() : null;
 
+    // Validate front-end inputs
     if (!isValidObjectId(userId)) {
       return res
         .status(400)
         .json({ message: "userId is not a valid ObjectId." });
     }
 
-    if (requestType !== "Activate" && requestType !== "Revoke") {
-      return res.status(400).json({ message: "requestType is invalid." });
-    }
+    // if (!isValidObjectId(requestedBy)) {
+    //   return res
+    //     .status(400)
+    //     .json({ message: "requestedById is not a valid ObjectId." });
+    // }
 
-    if (!isValidObjectId(requestedBy)) {
-      return res
-        .status(400)
-        .json({ message: "requestedById is not a valid ObjectId." });
-    }
-
-    if (!isValidObjectId(applicationId)) {
-      return res
-        .status(400)
-        .json({ message: "applicationId is not a valid ObjectId." });
-    }
-
-    await AccessRequest.create({
-      userId,
-      requestType,
-      requestedBy,
-      applicationId,
-      requestNote: trimmedRequestedNote,
-      status: "New",
+    // Validate front-end app Ids
+    applicationId.forEach((app) => {
+      if (!isValidObjectId(app)) {
+        return res
+          .status(400)
+          .json({ message: "applicationId is not a valid ObjectId." });
+      }
     });
 
-    return res
-      .status(201)
-      .json({ message: "Access request submitted successfully." });
+    // Track results
+    const results = {
+      created: [],
+      alreadyRequested: [],
+      alreadyActive: [],
+      errors: [],
+    };
+
+    for (const appId of applicationId) {
+      try {
+        // debugger;
+        // Check for existing request
+        const existingRequest = await AccessRequest.findOne({
+          userId,
+          applicationId: appId,
+        });
+
+        if (existingRequest) {
+          results.alreadyRequested.push(appId);
+          continue;
+        }
+
+        // Check existing access
+        const existingAccess = await ActiveAccessAssignment.findOne({
+          userId,
+          applicationId: appId,
+        });
+
+        if (existingAccess) {
+          results.alreadyActive.push(appId);
+          continue;
+        }
+
+        // Create the new request
+        const newReq = await AccessRequest.create({
+          userId,
+          requestType: "Activate",
+          requestedBy,
+          applicationId: appId,
+          requestNote: trimmedRequestedNote,
+          status: "New",
+        });
+
+        results.created.push(newReq);
+      } catch (err) {
+        results.errors.push({ appId, error: err.message });
+      }
+    }
+    // debugger;
+    return res.status(201).json({
+      message: "Processing completed.",
+      results,
+    });
   } catch (error) {
     next(error);
   }

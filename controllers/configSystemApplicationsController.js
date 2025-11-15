@@ -46,7 +46,7 @@ export async function newSystemApplication(req, res, next) {
     if (adminUserError) {
       return res.status(400).json({ message: `${adminUserError}` });
     }
-    debugger;
+    // debugger;
 
     await SystemApplication.create({
       system,
