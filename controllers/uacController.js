@@ -42,7 +42,7 @@ export async function getAccessRequests(req, res, next) {
       requestedBefore,
       applicationId,
       status,
-      approvedBy,
+      completedBy,
     } = req.query;
 
     const filter = {};
@@ -51,7 +51,7 @@ export async function getAccessRequests(req, res, next) {
     if (requestType) filter.requestType = requestType;
     if (status) filter.status = status;
     if (isValidObjectId(applicationId)) filter.applicationId = applicationId;
-    if (approvedBy) filter.approvedBy = approvedBy;
+    if (completedBy) filter.completedBy = completedBy;
     if (requestedBy) filter.requestedBy = requestedBy;
 
     // Optional date filtering
@@ -64,7 +64,7 @@ export async function getAccessRequests(req, res, next) {
     const accessRequests = await AccessRequest.find(filter)
       .populate("userId", "fullName username position")
       .populate("requestedBy", "fullName username position")
-      .populate("approvedBy", "fullName username position")
+      .populate("completedBy", "fullName username position")
       .populate("applicationId", "system")
       .sort({ requestedAt: -1 });
 
@@ -169,94 +169,174 @@ export async function newAccessRequest(req, res, next) {
   }
 }
 
-export async function updateAccessRequest(req, res, next) {
+export async function approveOrRejectRequest(req, res, next) {
   try {
-    const { userId, applicationId, approvedBy, status, notes } = req.body;
+    const { id, action } = req.body;
+    const completedBy = req.user._id;
 
-    // Validate request
-    if (!isValidObjectId(userId)) {
+    // Validate id of request to action is of correct form
+    if (!isValidObjectId(id)) {
       return res
         .status(400)
-        .json({ message: "userId is not a valid ObjectId." });
+        .json({ message: "id of access request is not a valid ObjectId." });
     }
 
-    if (!isValidObjectId(applicationId)) {
+    // Validate action type
+    if (action !== "Approved" && action !== "Rejected") {
+      return res.status(400).json({ message: "Action type is not valid." });
+    }
+
+    // Get system id
+    const requestDoc = await AccessRequest.findById(id).select("applicationId");
+    if (!requestDoc) {
+      return res.status(404).json({ message: "Access request not found." });
+    }
+    const applicationId = requestDoc?.applicationId;
+    if (!applicationId) {
       return res
         .status(400)
-        .json({ message: "applicationId is not a valid ObjectId." });
+        .json({ message: "Request ID has invalid system id." });
     }
 
-    if (!isValidObjectId(approvedBy)) {
+    // Confirm request can still be actioned.
+    if (requestDoc.status !== "New") {
+      return res.status(400).json({ message: "Request is already processed." });
+    }
+
+    // Get admins of system
+    const systemDoc = await SystemApplication.findById(applicationId).select(
+      "adminUser"
+    );
+    const admins = systemDoc?.adminUser;
+    if (!admins) {
       return res
         .status(400)
-        .json({ message: "approvedBy is not a valid ObjectId." });
+        .json({ message: "No admin users are configured." });
     }
 
-    const validStatus = ["Approved", "Denied", "Withdrawn", "Revoked"];
-    if (!validStatus.includes(status)) {
-      return res.status(400).json({ message: "Invalid new status provided." });
-    }
-
-    const trimmedNotes = typeof notes === "string" ? notes.trim() : null;
-
-    // Verify user making update to request is an admin of the application being changed
-    const isApproverAdminOfSystem = await SystemApplication.findOne({
-      _id: applicationId,
-      adminUser: approvedBy,
-    });
-    if (!isApproverAdminOfSystem) {
+    // Confirm user is an admin of the system in question from database.
+    const isAdmin = admins.some((a) => a.toString() === completedBy.toString());
+    if (!isAdmin) {
       return res.status(403).json({
         message:
-          "approvedBy user is not an admin of the application system and may not make changes.",
+          "User is not an admin of the application system and may not approve or deny access requests.",
       });
     }
 
-    debugger;
-    // Only allow updates of open/"new" status requests.
-    const updatedRequest = await AccessRequest.findOneAndUpdate(
-      { _id: req.params.id, status: "New" },
-      { status, approvedBy },
-      { runValidators: true, new: true }
+    const response = await AccessRequest.findByIdAndUpdate(
+      id,
+      {
+        status: action,
+        completedBy,
+        updatedAt: new Date().toISOString(),
+      },
+      { new: true }
     );
 
-    if (!updatedRequest) {
-      return res.status(404).json({
-        message: `No open/"new" status access request found to update.`,
+    if (!response) {
+      return res.status(400).json({
+        message: "Unable to process request.",
       });
     }
 
-    // Remove any assignment if request update is revoke
-    if (status === "Revoked") {
-      await ActiveAccessAssignment.deleteMany({
-        userId,
-        applicationId,
-      });
-    }
+    // LOGIC FOR CREATING ACTIVE REQUEST GOES HERE.
 
-    // Add assignment if request update is approved
-    if (status === "Approved") {
-      const existing = await ActiveAccessAssignment.exists({
-        userId,
-        applicationId,
-      });
-      if (existing) {
-        return res.status(400).json({
-          message: `User already has access to this application.`,
-        });
-      } else {
-        await ActiveAccessAssignment.create({
-          userId,
-          applicationId,
-          completedBy: approvedBy,
-          notes: trimmedNotes,
-        });
-      }
-    }
-
-    return res
-      .status(200)
-      .json({ message: "Access request successfully updated." });
+    return res.status(200).json({
+      message: "Access request updated successfully.",
+    });
   } catch (error) {
     next(error);
   }
 }
+
+// export async function updateAccessRequest(req, res, next) {
+//   try {
+//     const { userId, applicationId, status, notes } = req.body;
+
+//     // Validate request
+//     if (!isValidObjectId(userId)) {
+//       return res
+//         .status(400)
+//         .json({ message: "userId is not a valid ObjectId." });
+//     }
+
+//     if (!isValidObjectId(applicationId)) {
+//       return res
+//         .status(400)
+//         .json({ message: "applicationId is not a valid ObjectId." });
+//     }
+
+//     if (!isValidObjectId(approvedBy)) {
+//       return res
+//         .status(400)
+//         .json({ message: "approvedBy is not a valid ObjectId." });
+//     }
+
+//     const validStatus = ["Approved", "Denied", "Withdrawn", "Revoked"];
+//     if (!validStatus.includes(status)) {
+//       return res.status(400).json({ message: "Invalid new status provided." });
+//     }
+
+//     const trimmedNotes = typeof notes === "string" ? notes.trim() : null;
+
+//     // Verify user making update to request is an admin of the application being changed
+//     const isApproverAdminOfSystem = await SystemApplication.findOne({
+//       _id: applicationId,
+//       adminUser: approvedBy,
+//     });
+//     if (!isApproverAdminOfSystem) {
+//       return res.status(403).json({
+//         message:
+//           "approvedBy user is not an admin of the application system and may not make changes.",
+//       });
+//     }
+
+//     debugger;
+//     // Only allow updates of open/"new" status requests.
+//     const updatedRequest = await AccessRequest.findOneAndUpdate(
+//       { _id: req.params.id, status: "New" },
+//       { status, approvedBy },
+//       { runValidators: true, new: true }
+//     );
+
+//     if (!updatedRequest) {
+//       return res.status(404).json({
+//         message: `No open/"new" status access request found to update.`,
+//       });
+//     }
+
+//     // Remove any assignment if request update is revoke
+//     if (status === "Revoked") {
+//       await ActiveAccessAssignment.deleteMany({
+//         userId,
+//         applicationId,
+//       });
+//     }
+
+//     // Add assignment if request update is approved
+//     if (status === "Approved") {
+//       const existing = await ActiveAccessAssignment.exists({
+//         userId,
+//         applicationId,
+//       });
+//       if (existing) {
+//         return res.status(400).json({
+//           message: `User already has access to this application.`,
+//         });
+//       } else {
+//         await ActiveAccessAssignment.create({
+//           userId,
+//           applicationId,
+//           completedBy: approvedBy,
+//           notes: trimmedNotes,
+//         });
+//       }
+//     }
+
+//     return res
+//       .status(200)
+//       .json({ message: "Access request successfully updated." });
+//   } catch (error) {
+//     next(error);
+//   }
+// }

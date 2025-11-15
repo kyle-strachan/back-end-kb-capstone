@@ -3,7 +3,7 @@ import {
   getActiveAccessAssignments,
   getAccessRequests,
   newAccessRequest,
-  updateAccessRequest,
+  approveOrRejectRequest,
 } from "../controllers/uacController.js";
 import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
 // import { noCache } from ...
@@ -22,10 +22,17 @@ router.get(
 router.get("/access-requests", authMiddleware, attachUser, getAccessRequests);
 router.post("/access-requests", authMiddleware, attachUser, newAccessRequest);
 router.patch(
-  "/access-requests/:id",
+  "/access-requests",
   authMiddleware,
   attachUser,
-  updateAccessRequest
+  approveOrRejectRequest
 );
+
+// router.patch(
+//   "/access-requests/:id",
+//   authMiddleware,
+//   attachUser,
+//   updateAccessRequest
+// );
 
 export default router;
