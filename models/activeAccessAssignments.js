@@ -29,6 +29,10 @@ const activeAccessAssignmentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "AccessRequest",
     },
+    pendingRevocation: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
