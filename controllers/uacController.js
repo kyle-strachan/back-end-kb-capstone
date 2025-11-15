@@ -280,4 +280,78 @@ export async function approveOrRejectRequest(req, res, next) {
   }
 }
 
-export async function revokeAccess() {}
+export async function revokeAccessRequest(req, res, next) {
+  try {
+    // Front end sends active assignment Ids to revoke.
+    const { ids } = req.body; // Access request ids
+    const requestedBy = req.user._id;
+
+    // To do: does requestedBy have permission to terminate?
+
+    // Track results
+    const results = {
+      created: [],
+      alreadyRequested: [],
+      noAccess: [],
+      errors: [],
+    };
+
+    for (const requestId of ids) {
+      try {
+        // Validate front end ID
+        if (!isValidObjectId(requestId)) {
+          results.errors.push(requestId);
+        }
+
+        // Check existing access
+        const existingAccess = await ActiveAccessAssignment.findOne({
+          _id: requestId,
+        });
+        debugger;
+
+        // Reject request if user does not have access to this application
+        if (!existingAccess) {
+          results.noAccess.push(requestId);
+          continue;
+        }
+
+        // Check for existing "New" Revoke request for userId/applicationId combination
+        const existingRequest = await AccessRequest.findOne({
+          userId: existingAccess.userId,
+          applicationId: existingAccess.applicationId,
+          status: "New",
+        });
+
+        if (existingRequest) {
+          results.alreadyRequested.push(appId);
+          continue;
+        }
+
+        // Create the new request
+        const newReq = await AccessRequest.create({
+          userId: existingAccess.userId,
+          requestType: "Revoke",
+          requestedBy,
+          applicationId: existingAccess.applicationId,
+          status: "New",
+        });
+
+        // Mark access assignment as pending revocation
+        const updateRevoke = await ActiveAccessAssignment.findByIdAndUpdate(
+          requestId,
+          { pendingRevocation: true }
+        );
+
+        results.created.push(newReq);
+      } catch (err) {
+        results.errors.push({ appId, error: err.message });
+      }
+    }
+    return res.status(200).json({
+      message: "Processing completed.",
+      results,
+    });
+  } catch (error) {
+    next(error);
+  }
+}

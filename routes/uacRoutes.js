@@ -4,7 +4,7 @@ import {
   getAccessRequests,
   newAccessRequest,
   approveOrRejectRequest,
-  revokeAccess,
+  revokeAccessRequest,
 } from "../controllers/uacController.js";
 import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
 // import { noCache } from ...
@@ -19,10 +19,10 @@ router.get(
   getAccessAssignments
 );
 router.post(
-  "/access-assignments/revoke/:id",
+  "/access-assignments/revoke",
   authMiddleware,
   attachUser,
-  revokeAccess
+  revokeAccessRequest
 );
 
 // Requests
