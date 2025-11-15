@@ -307,7 +307,6 @@ export async function revokeAccessRequest(req, res, next) {
         const existingAccess = await ActiveAccessAssignment.findOne({
           _id: requestId,
         });
-        debugger;
 
         // Reject request if user does not have access to this application
         if (!existingAccess) {
