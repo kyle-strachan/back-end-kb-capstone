@@ -1,38 +1,38 @@
 import { Router } from "express";
 import {
-  getActiveAccessAssignments,
+  getAccessAssignments,
   getAccessRequests,
   newAccessRequest,
   approveOrRejectRequest,
+  revokeAccess,
 } from "../controllers/uacController.js";
 import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
 // import { noCache } from ...
 
 const router = Router();
 
-// Current assignments
+// Assignments
 router.get(
   "/access-assignments",
   authMiddleware,
   attachUser,
-  getActiveAccessAssignments
+  getAccessAssignments
+);
+router.post(
+  "/access-assignments/revoke/:id",
+  authMiddleware,
+  attachUser,
+  revokeAccess
 );
 
 // Requests
 router.get("/access-requests", authMiddleware, attachUser, getAccessRequests);
 router.post("/access-requests", authMiddleware, attachUser, newAccessRequest);
 router.patch(
-  "/access-requests",
+  "/access-requests/:id",
   authMiddleware,
   attachUser,
   approveOrRejectRequest
 );
-
-// router.patch(
-//   "/access-requests/:id",
-//   authMiddleware,
-//   attachUser,
-//   updateAccessRequest
-// );
 
 export default router;
