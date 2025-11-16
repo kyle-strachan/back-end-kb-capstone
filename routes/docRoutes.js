@@ -6,6 +6,11 @@ import {
   editDoc,
   toggleArchiveDoc,
 } from "../controllers/docsController.js";
+import {
+  editDocsCategory,
+  getDocsCategories,
+  newDocsCategory,
+} from "../controllers/docsController.js";
 import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
 // import { noCache } from ...
 
@@ -22,5 +27,10 @@ router.post(
   attachUser,
   toggleArchiveDoc(false)
 );
+
+// Doc categories
+router.get("/categories", authMiddleware, attachUser, getDocsCategories);
+router.post("/categories", authMiddleware, attachUser, newDocsCategory);
+router.patch("/categories/:id", authMiddleware, attachUser, editDocsCategory);
 
 export default router;
