@@ -20,6 +20,16 @@ export async function getUsers(req, res, next) {
 
 export async function registerUser(req, res, next) {
   // TO DO: LOCATION
+
+  // Permission check
+  const hasPermission = req.user.permissions.includes("userCanRegister");
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
+
   try {
     const {
       username,
@@ -63,6 +73,13 @@ export async function registerUser(req, res, next) {
       return res.status(400).json({ message: `${permissionsError}` });
     }
 
+    const existingUsername = await User.findOne({
+      username: username.toLowerCase().trim(),
+    });
+    if (existingUsername) {
+      return res.status(400).json({ message: `Username already exists.` });
+    }
+
     await User.create({
       username: username.toLowerCase().trim(),
       fullName: fullName.trim(),
@@ -83,7 +100,16 @@ export async function registerUser(req, res, next) {
 
 export async function editUser(req, res, next) {
   // Admin only to edit any part of user (except username). Password handled separately.
-  // debugger;
+
+  // Permission check
+  const hasPermission = req.user.permissions.includes("userCanEdit");
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
+
   try {
     const {
       fullName,
@@ -154,11 +180,17 @@ export async function editUser(req, res, next) {
 }
 
 export async function terminateUser(req, res, next) {
-  debugger;
+  // Permission check
+  const hasPermission = req.user.permissions.includes("userCanTerminate");
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
+
   const requestedBy = req.user._id;
   const userId = req.params.id;
-
-  // TO DO: Make sure requestedBy user has permission to terminate
 
   // Validate input from front-end
   if (!isValidObjectId(userId)) {

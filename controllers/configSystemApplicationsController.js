@@ -3,7 +3,14 @@ import SystemCategory from "../models/configSystemCategories.js";
 import { isValidObjectId, validateObjectIdArray } from "../utils/validation.js";
 
 export async function getSystemApplications(req, res, next) {
-  // debugger;
+  // Permission check
+  const hasPermission = req.user.permissions.includes("systemsCanManage");
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
   try {
     const systemApplications = await SystemApplication.find().sort({ name: 1 });
     const systemCategories = await SystemCategory.find().sort({ name: 1 });
@@ -25,6 +32,14 @@ export async function getSystemApplications(req, res, next) {
 }
 
 export async function newSystemApplication(req, res, next) {
+  // Permission check
+  const hasPermission = req.user.permissions.includes("systemsCanManage");
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
   try {
     const { system, category, isActive, adminUser, sendEmail, description } =
       req.body;
@@ -46,7 +61,6 @@ export async function newSystemApplication(req, res, next) {
     if (adminUserError) {
       return res.status(400).json({ message: `${adminUserError}` });
     }
-    // debugger;
 
     await SystemApplication.create({
       system,
@@ -63,6 +77,14 @@ export async function newSystemApplication(req, res, next) {
 }
 
 export async function editSystemApplication(req, res, next) {
+  // Permission check
+  const hasPermission = req.user.permissions.includes("systemsCanManage");
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
   try {
     const { system, category, isActive, adminUser, sendEmail, description } =
       req.body;

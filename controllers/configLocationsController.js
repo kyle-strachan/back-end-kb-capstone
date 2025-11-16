@@ -3,6 +3,14 @@ import Location from "../models/configLocations.js";
 const minimumLocationCharacterLength = 3;
 
 export async function getLocations(req, res, next) {
+  // Permission check
+  // const hasPermission = req.user.permissions.includes("systemsCanManage");
+  // const isSuperAdmin = req.user.isSuperAdmin;
+  // if (!hasPermission && !isSuperAdmin) {
+  //   return res
+  //     .status(403)
+  //     .json({ message: `User has insufficient permissions.` });
+  // }
   try {
     // debugger;
     const locations = await Location.find().sort({ name: 1 });
@@ -16,7 +24,14 @@ export async function getLocations(req, res, next) {
 }
 
 export async function newLocation(req, res, next) {
-  // debugger;
+  // Permission check
+  // const hasPermission = req.user.permissions.includes("systemsCanManage");
+  // const isSuperAdmin = req.user.isSuperAdmin;
+  // if (!hasPermission && !isSuperAdmin) {
+  //   return res
+  //     .status(403)
+  //     .json({ message: `User has insufficient permissions.` });
+  // }
   try {
     const { location } = req.body;
     await Location.create({
@@ -31,6 +46,14 @@ export async function newLocation(req, res, next) {
 }
 
 export async function editLocations(req, res, next) {
+  // Permission check
+  // const hasPermission = req.user.permissions.includes("systemsCanManage");
+  // const isSuperAdmin = req.user.isSuperAdmin;
+  // if (!hasPermission && !isSuperAdmin) {
+  //   return res
+  //     .status(403)
+  //     .json({ message: `User has insufficient permissions.` });
+  // }
   try {
     const updates = req.body.updates;
 

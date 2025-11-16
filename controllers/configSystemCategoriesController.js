@@ -3,7 +3,15 @@ import SystemCategory from "../models/configSystemCategories.js";
 const minimumCategoryCharacterLength = 3;
 
 export async function getSystemCategories(req, res, next) {
-  // debugger;
+  // Permission check
+  const hasPermission = req.user.permissions.includes("systemsCanManage");
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
+
   try {
     const systemCategories = await SystemCategory.find().sort({ name: 1 });
     if (!systemCategories || systemCategories.length === 0) {
@@ -16,7 +24,15 @@ export async function getSystemCategories(req, res, next) {
 }
 
 export async function newSystemCategory(req, res, next) {
-  // debugger;
+  // Permission check
+  const hasPermission = req.user.permissions.includes("systemsCanManage");
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
+
   try {
     const { category } = req.body;
 
@@ -36,7 +52,15 @@ export async function newSystemCategory(req, res, next) {
 }
 
 export async function editSystemCategory(req, res, next) {
-  // debugger;
+  // Permission check
+  const hasPermission = req.user.permissions.includes("systemsCanManage");
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
+
   try {
     const updates = req.body.updates;
 

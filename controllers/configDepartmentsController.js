@@ -3,8 +3,8 @@ import Department from "../models/configDepartments.js";
 const minimumDepartmentCharacterLength = 3;
 
 export async function getDepartments(req, res, next) {
+  // No permission check required. Required to populate non-sensitive drop-down boxes.
   try {
-    // debugger;
     const departments = await Department.find().sort({ department: 1 });
     if (!departments || departments.length === 0) {
       return res.status(404).json({ message: `No departments found.` });
@@ -16,6 +16,15 @@ export async function getDepartments(req, res, next) {
 }
 
 export async function newDepartment(req, res, next) {
+  // Permission check
+  const hasPermission = req.user.permissions.includes("departmentsCanManage");
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
+
   try {
     const { department } = req.body;
     await Department.create({
@@ -30,6 +39,15 @@ export async function newDepartment(req, res, next) {
 }
 
 export async function editDepartments(req, res, next) {
+  // Permission check
+  const hasPermission = req.user.permissions.includes("departmentsCanManage");
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
+
   try {
     const updates = req.body.updates;
 
