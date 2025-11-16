@@ -19,9 +19,10 @@ export async function getAccessAssignments(req, res, next) {
       .populate("completedBy")
       .populate("applicationId");
 
-    if (assignments.length === 0) {
-      return res.status(404).json({ message: "No access assignments found." });
-    }
+    // If assignments array is empty, do not send 404
+    // if (assignments.length === 0) {
+    //   return res.status(404).json({ message: "No access assignments found." });
+    // }
 
     return res.status(200).json({ assignments });
   } catch (error) {
@@ -172,7 +173,7 @@ export async function newAccessRequest(req, res, next) {
 }
 
 export async function approveOrRejectRequest(req, res, next) {
-  // debugger;
+  debugger;
   try {
     const id = req.params.id;
     const { action } = req.body;
@@ -191,7 +192,7 @@ export async function approveOrRejectRequest(req, res, next) {
     }
 
     // Get system id
-    debugger;
+    // debugger;
     const requestDoc = await AccessRequest.findById(id);
     if (!requestDoc) {
       return res.status(404).json({ message: "Access request not found." });
@@ -231,7 +232,7 @@ export async function approveOrRejectRequest(req, res, next) {
       });
     }
 
-    debugger;
+    // debugger;
     // Add assignment if request update is approved
     if (action === "Approved") {
       // Check if user already has active assignment
@@ -282,12 +283,23 @@ export async function approveOrRejectRequest(req, res, next) {
 
 export async function revokeAccessRequest(req, res, next) {
   try {
-    // Front end sends active assignment Ids to revoke.
-    const { ids } = req.body; // Access request ids
+    const { ids } = req.body;
     const requestedBy = req.user._id;
-
     // To do: does requestedBy have permission to terminate?
 
+    const results = await processRevocations(ids, requestedBy);
+
+    return res.status(201).json({
+      message: "Processing completed.",
+      results,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function processRevocations(ids, requestedBy) {
+  try {
     // Track results
     const results = {
       created: [],
@@ -346,10 +358,7 @@ export async function revokeAccessRequest(req, res, next) {
         results.errors.push({ appId, error: err.message });
       }
     }
-    return res.status(200).json({
-      message: "Processing completed.",
-      results,
-    });
+    return results;
   } catch (error) {
     next(error);
   }
