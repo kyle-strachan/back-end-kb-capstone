@@ -1,5 +1,8 @@
 import User from "../models/users.js";
-import { validateObjectIdArray } from "../utils/validation.js";
+import SystemApplication from "../models/configSystemApplications.js";
+import { isValidObjectId, validateObjectIdArray } from "../utils/validation.js";
+import { processRevocations } from "./uacController.js";
+import ActiveAccessAssignment from "../models/activeAccessAssignments.js";
 
 export async function getUsers(req, res, next) {
   try {
@@ -145,6 +148,60 @@ export async function editUser(req, res, next) {
     return res
       .status(200)
       .json({ message: `${editUser.username} has been updated successfully.` });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function terminateUser(req, res, next) {
+  debugger;
+  const requestedBy = req.user._id;
+  const userId = req.params.id;
+
+  // TO DO: Make sure requestedBy user has permission to terminate
+
+  // Validate input from front-end
+  if (!isValidObjectId(userId)) {
+    return res
+      .status(400)
+      .json({ message: `UserId to update is not a valid ObjectId.` });
+  }
+
+  if (requestedBy === userId) {
+    return res
+      .status(400)
+      .json({ message: `User cannot terminate own profile.` });
+  }
+
+  try {
+    // Get user object
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).json({ message: `UserId does not exist` });
+    }
+
+    // Get all active access assignments for user
+    const assignments = await ActiveAccessAssignment.find({ userId });
+
+    // Get array of IDs for revocation flow
+    const assignmentIds = assignments.map((a) => a._id.toString());
+
+    // Create revocation requests
+    const results = await processRevocations(assignmentIds, requestedBy);
+
+    // Confirm user is not an admin of any systems
+    const adminSystems = await SystemApplication.find({ adminUser: userId });
+    if (adminSystems.length > 0) {
+      return res
+        .status(400)
+        .json({ message: `User is an admin of an active system` });
+    }
+
+    // If not admin
+    user.isActive = false;
+    await user.save();
+
+    return res.status(200).json({ message: "Processing complete", results });
   } catch (error) {
     next(error);
   }
