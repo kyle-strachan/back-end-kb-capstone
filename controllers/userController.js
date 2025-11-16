@@ -68,8 +68,8 @@ export async function registerUser(req, res, next) {
       fullName: fullName.trim(),
       location,
       department,
-      email: email.toLowerCase.trim(),
-      position: position.toLowerCase.trim(),
+      email: email.toLowerCase().trim(),
+      position: position.trim(),
       passwordHash: password,
       permissions,
     });
