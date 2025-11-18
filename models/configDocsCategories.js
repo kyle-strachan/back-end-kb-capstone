@@ -1,12 +1,12 @@
 import mongoose from "mongoose";
 
-const departmentCategorySchema = new mongoose.Schema({
+const docsCategorySchema = new mongoose.Schema({
   departmentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Department",
     required: true,
   },
-  categoryName: {
+  category: {
     type: String,
     required: true,
     trim: true,
@@ -18,9 +18,6 @@ const departmentCategorySchema = new mongoose.Schema({
 });
 
 // Each department can have the same category, but enforce uniqueness on departmentId + categoryName
-departmentCategorySchema.index(
-  { departmentId: 1, categoryName: 1 },
-  { unique: true }
-);
+docsCategorySchema.index({ departmentId: 1, category: 1 }, { unique: true });
 
-export default mongoose.model("DepartmentCategory", departmentCategorySchema);
+export default mongoose.model("DocsCategory", docsCategorySchema);
