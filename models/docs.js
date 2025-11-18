@@ -50,11 +50,6 @@ const docSchema = new mongoose.Schema({
     ref: "DepartmentCategory",
     required: true,
   },
-  associatedSystem: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "SystemApplication",
-    default: null,
-  },
   isArchived: {
     type: Boolean,
     default: false,
