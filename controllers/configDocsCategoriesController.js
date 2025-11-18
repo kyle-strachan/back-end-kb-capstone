@@ -7,9 +7,10 @@ export async function getDocsCategories(req, res, next) {
   // No permission check required, populates non-sensitive drop down boxes
 
   try {
-    // debugger;
+    debugger;
     const { user } = req;
-    let filter = {};
+    const { departmentId } = req.query;
+    // let filter = {};
 
     // const permissionNames = user.permissions.map((p) => p.permissionName);
     // const canViewAll = permissionNames.includes(
@@ -31,6 +32,11 @@ export async function getDocsCategories(req, res, next) {
     // } else {
     //   return res.status(403).json({ message: "Access denied." });
     // }
+
+    let filter = {};
+    if (departmentId) {
+      filter = { departmentId: departmentId };
+    }
 
     const docsCategories = await DocsCategory.find(filter)
       .populate("departmentId", "department")

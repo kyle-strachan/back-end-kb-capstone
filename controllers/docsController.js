@@ -56,6 +56,7 @@ export async function getDoc(req, res, next) {
 }
 
 export async function newDoc(req, res, next) {
+  debugger;
   // Permission check
   // const hasPermission = req.user.permissions.includes("systemsCanManage");
   // const isSuperAdmin = req.user.isSuperAdmin;
@@ -71,9 +72,8 @@ export async function newDoc(req, res, next) {
       body,
       lastModifiedBy,
       department,
-      isDepartmentOnly,
+      isPublic,
       departmentCategory,
-      associatedSystem,
     } = req.body;
 
     const doc = await Doc.create(
@@ -83,7 +83,7 @@ export async function newDoc(req, res, next) {
         body,
         lastModifiedBy,
         department,
-        isDepartmentOnly,
+        isPublic,
         departmentCategory,
         associatedSystem,
       },
