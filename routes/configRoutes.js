@@ -29,6 +29,11 @@ import {
   getPlatformRoles,
   newPlatformRole,
 } from "../controllers/configPlatformRolesController.js";
+import {
+  editDocsCategory,
+  getDocsCategories,
+  newDocsCategory,
+} from "../controllers/configDocsCategoriesController.js";
 import { getPermissions } from "../controllers/configPermissionsController.js";
 import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
 
@@ -115,5 +120,10 @@ router.patch(
 
 // Config permissions
 router.get("/permissions", authMiddleware, attachUser, getPermissions);
+
+// Doc categories
+router.get("/docs-categories", authMiddleware, attachUser, getDocsCategories);
+router.post("/docs-categories", authMiddleware, attachUser, newDocsCategory);
+router.patch("/docs-categories", authMiddleware, attachUser, editDocsCategory);
 
 export default router;
