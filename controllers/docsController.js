@@ -1,4 +1,5 @@
 import Doc from "../models/docs.js";
+import { isValidObjectId } from "../utils/validation.js";
 
 // TO DO: USER FIELD AND AT FIELDS MUST BE POPULATED
 
@@ -43,52 +44,83 @@ export async function getDoc(req, res, next) {
   //     .json({ message: `User has insufficient permissions.` });
   // }
 
+  debugger;
+
   try {
     const docId = req.params.id;
-    const doc = await Doc.findById(docId);
+    const doc = await Doc.findById(docId)
+      .populate("createdBy")
+      .populate("department")
+      .populate("docsCategory");
     if (!doc) {
       return res.status(404).json({ message: `Document not found.` });
     }
-    return res.status(200).json(doc);
+    return res.status(200).json({ doc });
   } catch (error) {
     next(error);
   }
 }
 
 export async function newDoc(req, res, next) {
-  debugger;
   // Permission check
-  // const hasPermission = req.user.permissions.includes("systemsCanManage");
-  // const isSuperAdmin = req.user.isSuperAdmin;
-  // if (!hasPermission && !isSuperAdmin) {
-  //   return res
-  //     .status(403)
-  //     .json({ message: `User has insufficient permissions.` });
-  // }
+  const hasPermission = req.user.permissions.includes("docsCanCreate");
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
+
+  const lastModifiedByUser = req.user.id;
+
   try {
-    const {
+    const { title, description, body, department, isPublic, docsCategory } =
+      req.body;
+
+    // Validate inputs
+    if (!title || title.length < 3) {
+      return res
+        .status(400)
+        .json({ message: `A title must have at least three characters.` });
+    }
+
+    if (!description || description.length < 3) {
+      return res.status(400).json({
+        message: `A description must have at least three characters.`,
+      });
+    }
+
+    if (!body || body.length < 3) {
+      return res.status(400).json({
+        message: `A document body must have at least three characters.`,
+      });
+    }
+
+    const departmentError = isValidObjectId(department);
+    if (!departmentError) {
+      return res.status(400).json({ message: `Department ID is invalid.` });
+    }
+
+    const docsCategoryError = isValidObjectId(docsCategory);
+    if (!docsCategoryError) {
+      return res
+        .status(400)
+        .json({ message: `Document category ID is invalid.` });
+    }
+
+    const doc = await Doc.create({
       title,
       description,
       body,
-      lastModifiedBy,
+      createdBy: lastModifiedByUser,
+      lastModifiedBy: lastModifiedByUser,
+      lastModifiedAt: new Date(), // model requires this
       department,
       isPublic,
-      departmentCategory,
-    } = req.body;
+      docsCategory: docsCategory,
+    });
 
-    const doc = await Doc.create(
-      {
-        title,
-        description,
-        body,
-        lastModifiedBy,
-        department,
-        isPublic,
-        departmentCategory,
-        associatedSystem,
-      },
-      { new: true }
-    );
+    console.log(doc.id, doc._id);
 
     if (!doc) {
       return res
@@ -96,11 +128,14 @@ export async function newDoc(req, res, next) {
         .json({ message: `Document could not be created.` });
     }
 
-    return res.status(201).json({ message: "Document created successfully." });
+    return res
+      .status(201)
+      .json({ message: "Document created successfully.", docId: doc._id });
   } catch (error) {
     next(error);
   }
 }
+
 export async function editDoc(req, res, next) {
   // Permission check
   // const hasPermission = req.user.permissions.includes("systemsCanManage");
@@ -118,7 +153,7 @@ export async function editDoc(req, res, next) {
       lastModifiedBy,
       department,
       isDepartmentOnly,
-      departmentCategory,
+      docsCategory,
       associatedSystem,
     } = req.body;
 
@@ -132,7 +167,7 @@ export async function editDoc(req, res, next) {
         lastModifiedBy,
         department,
         isDepartmentOnly,
-        departmentCategory,
+        docsCategory,
         associatedSystem,
       },
       { runValidators: true, new: true }
