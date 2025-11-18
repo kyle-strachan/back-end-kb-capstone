@@ -45,9 +45,9 @@ const docSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  departmentCategory: {
+  docsCategory: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "DepartmentCategory",
+    ref: "DocsCategory",
     required: true,
   },
   isArchived: {
