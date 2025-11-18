@@ -7,7 +7,7 @@ export async function getDocsCategories(req, res, next) {
   // No permission check required, populates non-sensitive drop down boxes
 
   try {
-    debugger;
+    // debugger;
     const { user } = req;
     const { departmentId } = req.query;
     // let filter = {};
