@@ -41,9 +41,9 @@ const docSchema = new mongoose.Schema({
     ref: "Department",
     required: true,
   },
-  isDepartmentOnly: {
+  isPublic: {
     type: Boolean,
-    default: true,
+    default: false,
   },
   departmentCategory: {
     type: mongoose.Schema.Types.ObjectId,
