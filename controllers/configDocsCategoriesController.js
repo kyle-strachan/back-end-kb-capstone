@@ -79,7 +79,7 @@ export async function newDocsCategory(req, res, next) {
         .json({ message: `Category must have a minimum of three characters.` });
     }
 
-    debugger;
+    // debugger;
     const newCategory = await DocsCategory.create({ departmentId, category });
     if (!newCategory) {
       return res
