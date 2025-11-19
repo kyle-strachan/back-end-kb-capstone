@@ -23,12 +23,19 @@ export async function getDocs(req, res, next) {
   //     .status(403)
   //     .json({ message: `User has insufficient permissions.` });
   // }
+
+  // debugger;
+
   try {
-    const docs = await Doc.find().sort({ name: 1 });
+    const docs = await Doc.find()
+      .sort({ name: 1 })
+      .populate("createdBy")
+      .populate("department", "department")
+      .populate("docsCategory", "category");
     if (docs.length === 0) {
       return res.status(404).json({ message: `No documents found.` });
     }
-    return res.status(200).json(docs);
+    return res.status(200).json({ docs });
   } catch (error) {
     next(error);
   }
@@ -44,7 +51,7 @@ export async function getDoc(req, res, next) {
   //     .json({ message: `User has insufficient permissions.` });
   // }
 
-  debugger;
+  // debugger;
 
   try {
     const docId = req.params.id;
@@ -185,7 +192,7 @@ export async function editDoc(req, res, next) {
   }
 }
 
-export function toggleArchiveDoc(archive) {
+export async function toggleArchiveDoc(archive) {
   // Permission check
   // const hasPermission = req.user.permissions.includes("systemsCanManage");
   // const isSuperAdmin = req.user.isSuperAdmin;
@@ -220,4 +227,80 @@ export function toggleArchiveDoc(archive) {
       next(error);
     }
   };
+}
+
+export async function getDocsTree(req, res, next) {
+  // debugger;
+
+  try {
+    // Get all docs
+    const docs = await Doc.find()
+      .populate("department")
+      .populate("docsCategory");
+
+    const departmentMap = {};
+
+    // Loop through each doc and push into tree. If it doesn't exist, create it.
+    for (const doc of docs) {
+      const department = doc.department;
+      if (!department) continue; // in case it's missing in the database, skip.
+
+      const depId = String(department._id);
+      const depName = department.department;
+
+      // Check whether department exists in map
+      if (!departmentMap[depId]) {
+        departmentMap[depId] = {
+          id: depId,
+          label: depName,
+          children: [], // categories will be inserted here
+        };
+      }
+
+      const depNode = departmentMap[depId];
+
+      // Get category
+      const category = doc.docsCategory;
+      const catId = category ? String(category._id) : "0"; // Should never happen — remove later.
+      const catLabel = category ? category.category : "Uncategorised";
+
+      // Check if category id already exists in the department
+      let catNode = depNode.children.find((c) => c.id === catId);
+
+      if (!catNode) {
+        catNode = {
+          id: catId,
+          label: catLabel,
+          children: [], // Will contain individual docs
+        };
+        depNode.children.push(catNode); // insert catNode if not present
+      }
+
+      // Push the document into the map
+      catNode.children.push({
+        id: String(doc._id),
+        label: doc.title,
+        fileType: "doc", // Hard-coding all docs as file icons for now
+      });
+    }
+
+    let items = Object.values(departmentMap);
+
+    // Sort by departments
+    items.sort((a, b) => a.label.localeCompare(b.label));
+
+    // Sort by categories and documents
+    for (const dep of items) {
+      dep.children.sort((a, b) => a.label.localeCompare(b.label)); // categories
+
+      for (const cat of dep.children) {
+        cat.children.sort((a, b) => a.label.localeCompare(b.label)); // documents
+      }
+    }
+
+    // debugger;
+    return res.status(200).json({ items });
+  } catch (error) {
+    next(error);
+  }
 }
