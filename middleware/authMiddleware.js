@@ -25,6 +25,7 @@ export async function authMiddleware(req, res, next) {
   const accessToken = req.cookies?.accessToken;
   const refreshToken = req.cookies?.refreshToken;
 
+  // debugger;
   if (!accessToken && !refreshToken) {
     // No access token or refresh token provided, return to login
     return res.status(401).json({ message: "User not authorised." });
@@ -60,13 +61,22 @@ export async function authMiddleware(req, res, next) {
       return res.status(401).json({ message: "User unauthorised." });
     }
     const newAccessToken = signAccessToken(user);
+    const newRefreshToken = signRefreshToken(user);
 
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 15 * 60 * 1000, // 15 mins
+      maxAge: 15 * 60 * 1000,
     });
+
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     // Set user ID for the current request
     req.userId = user._id;
     return next();
