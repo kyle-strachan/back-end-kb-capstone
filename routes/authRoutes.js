@@ -10,7 +10,7 @@ router.post("/login", login);
 router.post("/logout", authMiddleware, logout);
 router.post("/reset", authMiddleware, resetPassword);
 router.get("/me", authMiddleware, attachUser, (req, res) => {
-  res.json(req.user);
+  res.json({ user: req.user });
 });
 
 export default router;
