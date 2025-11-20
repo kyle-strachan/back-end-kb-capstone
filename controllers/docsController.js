@@ -69,6 +69,7 @@ export async function getDoc(req, res, next) {
 }
 
 export async function newDoc(req, res, next) {
+  debugger;
   // Permission check
   const hasPermission = req.user.permissions.includes("docsCanCreate");
   const isSuperAdmin = req.user.isSuperAdmin;
@@ -81,8 +82,15 @@ export async function newDoc(req, res, next) {
   const lastModifiedByUser = req.user.id;
 
   try {
-    const { title, description, body, department, isPublic, docsCategory } =
-      req.body;
+    const {
+      title,
+      description,
+      body,
+      department,
+      isPublic,
+      docsCategory,
+      isArchived,
+    } = req.body;
 
     // Validate inputs
     if (!title || title.length < 3) {
@@ -125,9 +133,8 @@ export async function newDoc(req, res, next) {
       department,
       isPublic,
       docsCategory: docsCategory,
+      isArchived,
     });
-
-    console.log(doc.id, doc._id);
 
     if (!doc) {
       return res
@@ -144,25 +151,59 @@ export async function newDoc(req, res, next) {
 }
 
 export async function editDoc(req, res, next) {
+  debugger;
   // Permission check
-  // const hasPermission = req.user.permissions.includes("systemsCanManage");
-  // const isSuperAdmin = req.user.isSuperAdmin;
-  // if (!hasPermission && !isSuperAdmin) {
-  //   return res
-  //     .status(403)
-  //     .json({ message: `User has insufficient permissions.` });
-  // }
+  const hasPermission = req.user.permissions.includes("docsCanCreate");
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
+
+  const lastModifiedByUser = req.user.id;
+
   try {
     const {
       title,
       description,
       body,
-      lastModifiedBy,
       department,
-      isDepartmentOnly,
+      isPublic,
       docsCategory,
-      associatedSystem,
+      isArchived,
     } = req.body;
+
+    // Validate inputs
+    if (!title || title.length < 3) {
+      return res
+        .status(400)
+        .json({ message: `A title must have at least three characters.` });
+    }
+
+    if (!description || description.length < 3) {
+      return res.status(400).json({
+        message: `A description must have at least three characters.`,
+      });
+    }
+
+    if (!body || body.length < 3) {
+      return res.status(400).json({
+        message: `A document body must have at least three characters.`,
+      });
+    }
+
+    const departmentError = isValidObjectId(department);
+    if (!departmentError) {
+      return res.status(400).json({ message: `Department ID is invalid.` });
+    }
+
+    const docsCategoryError = isValidObjectId(docsCategory);
+    if (!docsCategoryError) {
+      return res
+        .status(400)
+        .json({ message: `Document category ID is invalid.` });
+    }
 
     const docId = req.params.id;
     const updatedDoc = await Doc.findByIdAndUpdate(
@@ -171,11 +212,12 @@ export async function editDoc(req, res, next) {
         title,
         description,
         body,
-        lastModifiedBy,
+        lastModifiedBy: lastModifiedByUser,
+        lastModifiedAt: new Date(), // model requires this
         department,
-        isDepartmentOnly,
-        docsCategory,
-        associatedSystem,
+        isPublic,
+        docsCategory: docsCategory,
+        isArchived,
       },
       { runValidators: true, new: true }
     );
@@ -184,49 +226,10 @@ export async function editDoc(req, res, next) {
         .status(404)
         .json({ message: `${docId} could not be updated.` });
     }
-    return res
-      .status(200)
-      .json({ message: `Document successfully created.` }, updatedDoc);
+    return res.status(200).json({ message: `Document updated successfully.` });
   } catch (error) {
     next(error);
   }
-}
-
-export async function toggleArchiveDoc(archive) {
-  // Permission check
-  // const hasPermission = req.user.permissions.includes("systemsCanManage");
-  // const isSuperAdmin = req.user.isSuperAdmin;
-  // if (!hasPermission && !isSuperAdmin) {
-  //   return res
-  //     .status(403)
-  //     .json({ message: `User has insufficient permissions.` });
-  // }
-  return async (req, res, next) => {
-    try {
-      const docId = req.params.id;
-
-      const updated = await Doc.findByIdAndUpdate(
-        docId,
-        { isArchived: archive },
-        { new: true }
-      );
-
-      if (!updated) {
-        return res
-          .status(404)
-          .json({ message: `Document ${docId} not found.` });
-      }
-
-      res.status(200).json({
-        message: `Document ${
-          archive ? "archived" : "unarchived"
-        } successfully.`,
-        doc: updated,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
 }
 
 export async function getDocsTree(req, res, next) {
@@ -298,7 +301,6 @@ export async function getDocsTree(req, res, next) {
       }
     }
 
-    // debugger;
     return res.status(200).json({ items });
   } catch (error) {
     next(error);
