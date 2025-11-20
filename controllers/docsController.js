@@ -1,5 +1,10 @@
 import Doc from "../models/docs.js";
 import { isValidObjectId } from "../utils/validation.js";
+import { upload } from "../utils/multer.js";
+import { wasabi } from "../utils/wasabi.js";
+import express from "express";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import sharp from "sharp";
 
 // TO DO: USER FIELD AND AT FIELDS MUST BE POPULATED
 
@@ -303,6 +308,51 @@ export async function getDocsTree(req, res, next) {
 
     return res.status(200).json({ items });
   } catch (error) {
+    next(error);
+  }
+}
+
+export async function uploadImage(req, res, next) {
+  try {
+    const docId = req.params.id;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // Sanitize + resize + convert
+    const processedImageBuffer = await sharp(req.file.buffer)
+      .resize({ width: 1000 })
+      .webp({ quality: 80 })
+      .toBuffer();
+
+    // Create filename
+    const timestamp = Date.now();
+    const fileName = `${timestamp}.webp`;
+
+    // Wasabi path
+    const Key = `documents/${docId}/${fileName}`;
+    const Bucket = process.env.WASABI_BUCKET;
+
+    // Upload to Wasabi
+    await wasabi.send(
+      new PutObjectCommand({
+        Bucket,
+        Key,
+        Body: processedImageBuffer,
+        ContentType: "image/webp",
+      })
+    );
+
+    // Public URL from Wasabi
+    const url = `https://s3.wasabisys.com/${Bucket}/${Key}`;
+
+    res.json({
+      message: "Image uploaded successfully",
+      url,
+    });
+  } catch (error) {
+    console.error("Image upload failed:", error);
     next(error);
   }
 }
