@@ -5,6 +5,8 @@ import { wasabi } from "../utils/wasabi.js";
 import express from "express";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
+import { ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // TO DO: USER FIELD AND AT FIELDS MUST BE POPULATED
 
@@ -156,7 +158,7 @@ export async function newDoc(req, res, next) {
 }
 
 export async function editDoc(req, res, next) {
-  debugger;
+  // debugger;
   // Permission check
   const hasPermission = req.user.permissions.includes("docsCanCreate");
   const isSuperAdmin = req.user.isSuperAdmin;
@@ -313,6 +315,7 @@ export async function getDocsTree(req, res, next) {
 }
 
 export async function uploadImage(req, res, next) {
+  // debugger;
   try {
     const docId = req.params.id;
 
@@ -322,7 +325,10 @@ export async function uploadImage(req, res, next) {
 
     // Sanitize + resize + convert
     const processedImageBuffer = await sharp(req.file.buffer)
-      .resize({ width: 1000 })
+      .resize({
+        width: 1000,
+        withoutEnlargement: true, // <-- prevents upscaling
+      })
       .webp({ quality: 80 })
       .toBuffer();
 
@@ -344,15 +350,66 @@ export async function uploadImage(req, res, next) {
       })
     );
 
-    // Public URL from Wasabi
-    const url = `https://s3.wasabisys.com/${Bucket}/${Key}`;
+    // AFTER successfully uploading to Wasabi:
+    const signedUrl = await getSignedUrl(
+      wasabi,
+      new GetObjectCommand({
+        Bucket,
+        Key,
+      }),
+      { expiresIn: 60 * 60 } // 1 hour
+    );
 
+    // Return both the key AND the temporary URL
     res.json({
-      message: "Image uploaded successfully",
-      url,
+      key: Key,
+      url: signedUrl,
     });
   } catch (error) {
     console.error("Image upload failed:", error);
     next(error);
+  }
+}
+
+export async function listDocImages(req, res, next) {
+  try {
+    const docId = req.params.id;
+    const Bucket = process.env.WASABI_BUCKET;
+    const Prefix = `documents/${docId}/`;
+
+    // 1. List files in the folder
+    const list = await wasabi.send(
+      new ListObjectsV2Command({
+        Bucket,
+        Prefix,
+      })
+    );
+
+    if (!list.Contents || list.Contents.length === 0) {
+      return res.json({ images: [] });
+    }
+
+    // 2. For each file, generate a signed URL
+    const images = await Promise.all(
+      list.Contents.map(async (item) => {
+        const getCmd = new GetObjectCommand({
+          Bucket,
+          Key: item.Key,
+        });
+
+        const url = await getSignedUrl(wasabi, getCmd, {
+          expiresIn: 60 * 15, // 15 minutes
+        });
+
+        return {
+          key: item.Key.replace(Prefix, ""), // file name only
+          url,
+        };
+      })
+    );
+
+    return res.json({ images });
+  } catch (err) {
+    next(err);
   }
 }
