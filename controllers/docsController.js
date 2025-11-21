@@ -315,7 +315,7 @@ export async function getDocsTree(req, res, next) {
 }
 
 export async function uploadImage(req, res, next) {
-  // debugger;
+  debugger;
   try {
     const docId = req.params.id;
 
@@ -353,15 +353,11 @@ export async function uploadImage(req, res, next) {
     // AFTER successfully uploading to Wasabi:
     const signedUrl = await getSignedUrl(
       wasabi,
-      new GetObjectCommand({
-        Bucket,
-        Key,
-      }),
-      { expiresIn: 60 * 60 } // 1 hour
+      new GetObjectCommand({ Bucket, Key }),
+      { expiresIn: 60 * 1 } // 1 minute
     );
 
-    // Return both the key AND the temporary URL
-    res.json({
+    return res.json({
       key: Key,
       url: signedUrl,
     });
@@ -398,7 +394,7 @@ export async function listDocImages(req, res, next) {
         });
 
         const url = await getSignedUrl(wasabi, getCmd, {
-          expiresIn: 60 * 15, // 15 minutes
+          expiresIn: 60 * 2, // 2 minutes
         });
 
         return {
