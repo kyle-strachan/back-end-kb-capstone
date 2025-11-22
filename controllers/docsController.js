@@ -7,6 +7,8 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
 import { ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+// import { GetObjectCommand } from "@aws-sdk/client-s3";
+// import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // TO DO: USER FIELD AND AT FIELDS MUST BE POPULATED
 
@@ -76,7 +78,7 @@ export async function getDoc(req, res, next) {
 }
 
 export async function newDoc(req, res, next) {
-  debugger;
+  // debugger;
   // Permission check
   const hasPermission = req.user.permissions.includes("docsCanCreate");
   const isSuperAdmin = req.user.isSuperAdmin;
@@ -158,7 +160,7 @@ export async function newDoc(req, res, next) {
 }
 
 export async function editDoc(req, res, next) {
-  // debugger;
+  debugger;
   // Permission check
   const hasPermission = req.user.permissions.includes("docsCanCreate");
   const isSuperAdmin = req.user.isSuperAdmin;
@@ -367,45 +369,63 @@ export async function uploadImage(req, res, next) {
   }
 }
 
-export async function listDocImages(req, res, next) {
+export async function signUrl(req, res, next) {
   try {
-    const docId = req.params.id;
+    const { key } = req.query; // e.g. "documents/6921.../1763775.webp"
     const Bucket = process.env.WASABI_BUCKET;
-    const Prefix = `documents/${docId}/`;
 
-    // 1. List files in the folder
-    const list = await wasabi.send(
-      new ListObjectsV2Command({
-        Bucket,
-        Prefix,
-      })
+    const signedUrl = await getSignedUrl(
+      wasabi,
+      new GetObjectCommand({ Bucket, Key: key }),
+      { expiresIn: 60 } // valid for 60 seconds (adjust as needed)
     );
 
-    if (!list.Contents || list.Contents.length === 0) {
-      return res.json({ images: [] });
-    }
-
-    // 2. For each file, generate a signed URL
-    const images = await Promise.all(
-      list.Contents.map(async (item) => {
-        const getCmd = new GetObjectCommand({
-          Bucket,
-          Key: item.Key,
-        });
-
-        const url = await getSignedUrl(wasabi, getCmd, {
-          expiresIn: 60 * 2, // 2 minutes
-        });
-
-        return {
-          key: item.Key.replace(Prefix, ""), // file name only
-          url,
-        };
-      })
-    );
-
-    return res.json({ images });
-  } catch (err) {
-    next(err);
+    res.json({ url: signedUrl });
+  } catch (error) {
+    console.error("Failed to sign URL:", error);
+    next(error);
   }
 }
+
+// export async function listDocImages(req, res, next) {
+//   try {
+//     const docId = req.params.id;
+//     const Bucket = process.env.WASABI_BUCKET;
+//     const Prefix = `documents/${docId}/`;
+
+//     // 1. List files in the folder
+//     const list = await wasabi.send(
+//       new ListObjectsV2Command({
+//         Bucket,
+//         Prefix,
+//       })
+//     );
+
+//     if (!list.Contents || list.Contents.length === 0) {
+//       return res.json({ images: [] });
+//     }
+
+//     // 2. For each file, generate a signed URL
+//     const images = await Promise.all(
+//       list.Contents.map(async (item) => {
+//         const getCmd = new GetObjectCommand({
+//           Bucket,
+//           Key: item.Key,
+//         });
+
+//         const url = await getSignedUrl(wasabi, getCmd, {
+//           expiresIn: 60 * 2, // 2 minutes
+//         });
+
+//         return {
+//           key: item.Key.replace(Prefix, ""), // file name only
+//           url,
+//         };
+//       })
+//     );
+
+//     return res.json({ images });
+//   } catch (err) {
+//     next(err);
+//   }
+// }
