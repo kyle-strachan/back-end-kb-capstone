@@ -19,8 +19,8 @@ const router = Router();
 router.get("/", authMiddleware, attachUser, getDocs); // Get all docs appropriate of users based on canViewAllDocs etc.
 router.get("/tree", authMiddleware, attachUser, getDocsTree); // To output the explorer
 // router.get("/:id/images", listDocImages);
+router.get("/:id/sign-url", signUrl);
 router.get("/:id", authMiddleware, attachUser, getDoc); // get single doc
-router.get("/docs/:id/sign-url", signUrl);
 
 router.post(
   "/:id/upload-image",
