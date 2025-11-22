@@ -202,6 +202,7 @@ export async function newAccessRequest(req, res, next) {
 }
 
 export async function approveOrRejectRequest(req, res, next) {
+  // debugger;
   // Permission check, note: there is a subsequent check that user is admin of system being changes
   const hasPermission = req.user.permissions.includes(
     "accessRequestsCanApproveReject"
@@ -349,6 +350,7 @@ export async function revokeAccessRequest(req, res, next) {
 }
 
 export async function processRevocations(ids, requestedBy) {
+  // debugger;
   try {
     // Track results
     const results = {
@@ -384,7 +386,7 @@ export async function processRevocations(ids, requestedBy) {
         });
 
         if (existingRequest) {
-          results.alreadyRequested.push(appId);
+          results.alreadyRequested.push(requestId);
           continue;
         }
 
@@ -410,6 +412,45 @@ export async function processRevocations(ids, requestedBy) {
     }
     return results;
   } catch (error) {
+    return res.status(500).json({ message: "Unknown error occurred." });
+  }
+}
+
+export function getMyAccessRequests(req, res, next) {
+  try {
+    // const results = await;
+  } catch (error) {}
+}
+
+export function getByAccessRequests(req, res, next) {
+  try {
+  } catch (error) {}
+}
+
+export async function getToActionAccessRequests(req, res, next) {
+  try {
+    const adminSystems = await SystemApplication.find({
+      adminUser: req.user._id,
+    }).select("_id");
+
+    const systemIds = adminSystems.map((s) => s._id);
+
+    const toActionRequests = await AccessRequest.find({
+      applicationId: { $in: systemIds },
+      status: "New",
+    })
+      .populate("userId", "fullName username position")
+      .populate("requestedBy", "fullName username position")
+      .populate("completedBy", "fullName username position")
+      .populate("applicationId", "system")
+      .sort({ requestedAt: -1 });
+
+    // debugger;
+    return res
+      .status(200)
+      .json({ toActionRequests, total: toActionRequests.length });
+  } catch (error) {
+    console.log(error);
     next(error);
   }
 }
