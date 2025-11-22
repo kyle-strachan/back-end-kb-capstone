@@ -5,7 +5,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha --require test/setup.js \"test/routes.js\"",
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
@@ -26,6 +26,9 @@
     "sharp": "^0.34.5"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "chai": "^6.2.1",
+    "mocha": "^11.7.5",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.1.4"
   }
 }
