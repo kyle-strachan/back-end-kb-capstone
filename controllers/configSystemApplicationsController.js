@@ -12,7 +12,9 @@ export async function getSystemApplications(req, res, next) {
       .json({ message: `User has insufficient permissions.` });
   }
   try {
-    const systemApplications = await SystemApplication.find().sort({ name: 1 });
+    const systemApplications = await SystemApplication.find().sort({
+      system: 1,
+    });
     const systemCategories = await SystemCategory.find().sort({ name: 1 });
     // Reject is either are incomplete or empty.
     if (
