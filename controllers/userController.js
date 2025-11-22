@@ -99,6 +99,7 @@ export async function registerUser(req, res, next) {
 }
 
 export async function editUser(req, res, next) {
+  // debugger;
   // Admin only to edit any part of user (except username). Password handled separately.
 
   // Permission check
@@ -111,15 +112,8 @@ export async function editUser(req, res, next) {
   }
 
   try {
-    const {
-      fullName,
-      location,
-      isActive,
-      department,
-      email,
-      position,
-      permissions,
-    } = req.body;
+    const { fullName, location, department, email, position, permissions } =
+      req.body;
 
     if (!fullName || !fullName.trim()) {
       return res.status(400).json({ message: "Full name is required." });
@@ -162,7 +156,7 @@ export async function editUser(req, res, next) {
         email,
         position,
         permissions,
-        isActive,
+        isActive: true, // Force for all saves - allows reactivate to work.
       },
       { runValidators: true, new: true }
     );
@@ -233,7 +227,7 @@ export async function terminateUser(req, res, next) {
     user.isActive = false;
     await user.save();
 
-    return res.status(200).json({ message: "Processing complete", results });
+    return res.status(200).json({ message: "Processing complete.", results });
   } catch (error) {
     next(error);
   }
