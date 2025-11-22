@@ -145,6 +145,8 @@ export async function newDoc(req, res, next) {
       isArchived,
     });
 
+    debugger;
+
     if (!doc) {
       return res
         .status(400)
@@ -160,7 +162,7 @@ export async function newDoc(req, res, next) {
 }
 
 export async function editDoc(req, res, next) {
-  debugger;
+  // debugger;
   // Permission check
   const hasPermission = req.user.permissions.includes("docsCanCreate");
   const isSuperAdmin = req.user.isSuperAdmin;
@@ -317,7 +319,7 @@ export async function getDocsTree(req, res, next) {
 }
 
 export async function uploadImage(req, res, next) {
-  debugger;
+  // debugger;
   try {
     const docId = req.params.id;
 
