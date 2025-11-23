@@ -7,6 +7,8 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
 import { ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import createDOMPurify from "dompurify";
+import { JSDOM } from "jsdom";
 // import { GetObjectCommand } from "@aws-sdk/client-s3";
 // import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -389,45 +391,99 @@ export async function signUrl(req, res, next) {
   }
 }
 
-// export async function listDocImages(req, res, next) {
-//   try {
-//     const docId = req.params.id;
-//     const Bucket = process.env.WASABI_BUCKET;
-//     const Prefix = `documents/${docId}/`;
+// Helper to generate a snippet around the first matched term
+function makeSnippet(text, terms, maxLen = 200) {
+  if (!text) return "";
+  const normalized = text.toLowerCase();
+  let idx = -1;
 
-//     // 1. List files in the folder
-//     const list = await wasabi.send(
-//       new ListObjectsV2Command({
-//         Bucket,
-//         Prefix,
-//       })
-//     );
+  for (const t of terms) {
+    const i = normalized.indexOf(t.toLowerCase());
+    if (i !== -1) {
+      idx = i;
+      break;
+    }
+  }
 
-//     if (!list.Contents || list.Contents.length === 0) {
-//       return res.json({ images: [] });
-//     }
+  if (idx === -1) {
+    // fallback: just return the start of the text
+    return text.slice(0, maxLen) + (text.length > maxLen ? "…" : "");
+  }
 
-//     // 2. For each file, generate a signed URL
-//     const images = await Promise.all(
-//       list.Contents.map(async (item) => {
-//         const getCmd = new GetObjectCommand({
-//           Bucket,
-//           Key: item.Key,
-//         });
+  const start = Math.max(0, idx - Math.floor(maxLen / 3));
+  const snippet = text.slice(start, start + maxLen);
+  return (
+    (start > 0 ? "…" : "") + snippet + (start + maxLen < text.length ? "…" : "")
+  );
+}
 
-//         const url = await getSignedUrl(wasabi, getCmd, {
-//           expiresIn: 60 * 2, // 2 minutes
-//         });
+export async function getDocsSearch(req, res, next) {
+  try {
+    const q = (req.query.q || "").trim();
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit, 10) || 20, 1),
+      100
+    );
+    const skip = (page - 1) * limit;
 
-//         return {
-//           key: item.Key.replace(Prefix, ""), // file name only
-//           url,
-//         };
-//       })
-//     );
+    if (!q) {
+      return res.status(400).json({ error: "Missing query parameter: q" });
+    }
 
-//     return res.json({ images });
-//   } catch (err) {
-//     next(err);
-//   }
+    const projection = {
+      score: { $meta: "textScore" },
+      title: 1,
+      description: 1,
+      body: 1,
+      updatedAt: 1,
+    };
+
+    const [results, total] = await Promise.all([
+      Doc.find({ $text: { $search: q } }, projection)
+        .sort({ score: { $meta: "textScore" } })
+        .skip(skip)
+        .limit(limit),
+      Doc.countDocuments({ $text: { $search: q } }),
+    ]);
+
+    // Build snippets
+    const terms = q.replace(/"/g, "").split(/\s+/).filter(Boolean);
+    const resultsWithSnippets = results.map((r) => ({
+      ...r.toObject(),
+      snippet: cleanSnippet(
+        makeSnippet(r.body || r.description || r.title, terms)
+      ),
+    }));
+
+    // debugger;
+    res.json({
+      query: q,
+      page,
+      limit,
+      total,
+      results: resultsWithSnippets,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// function cleanSnippet(snippet) {
+//   // Allow only inline formatting tags, strip block-level tags
+//   return DOMPurify.sanitize(snippet, {
+//     ALLOWED_TAGS: ["b", "i", "em", "strong", "span"],
+//     ALLOWED_ATTR: [],
+//   });
 // }
+
+const window = new JSDOM("").window;
+const DOMPurify = createDOMPurify(window);
+
+function cleanSnippet(snippet) {
+  const normalized = snippet.replace(/&nbsp;/g, " ");
+  return DOMPurify.sanitize(normalized, {
+    ALLOWED_TAGS: ["b", "i", "em", "strong", "span"],
+    ALLOWED_ATTR: [],
+  });
+}
