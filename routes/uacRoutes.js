@@ -8,6 +8,7 @@ import {
   getToActionAccessRequests,
   getMyAccessRequests,
   getByAccessRequests,
+  confirmRevocation,
 } from "../controllers/uacController.js";
 import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
 // import { noCache } from ...
@@ -15,12 +16,21 @@ import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
 const router = Router();
 
 // Assignments
+// Can only be viewed, assignments are created and deleted using request approvals..
 router.get(
   "/access-assignments",
   authMiddleware,
   attachUser,
   getAccessAssignments
 );
+
+router.post(
+  "/access-assignments/confirm-revoke/:id",
+  authMiddleware,
+  attachUser,
+  confirmRevocation
+);
+// Create a request to revoke access
 router.post(
   "/access-assignments/revoke",
   authMiddleware,

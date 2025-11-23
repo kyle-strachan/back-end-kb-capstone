@@ -272,7 +272,6 @@ export async function approveOrRejectRequest(req, res, next) {
       });
     }
 
-    // debugger;
     // Add assignment if request update is approved
     if (action === "Approved") {
       // Check if user already has active assignment
@@ -323,6 +322,7 @@ export async function approveOrRejectRequest(req, res, next) {
 
 export async function revokeAccessRequest(req, res, next) {
   // Permission check
+  debugger;
   const hasPermission = req.user.permissions.includes(
     "accessRequestsCanRevoke"
   );
@@ -336,8 +336,6 @@ export async function revokeAccessRequest(req, res, next) {
   try {
     const { ids } = req.body;
     const requestedBy = req.user._id;
-    // To do: does requestedBy have permission to terminate?
-
     const results = await processRevocations(ids, requestedBy);
 
     return res.status(201).json({
@@ -451,6 +449,71 @@ export async function getToActionAccessRequests(req, res, next) {
       .json({ toActionRequests, total: toActionRequests.length });
   } catch (error) {
     console.log(error);
+    next(error);
+  }
+}
+
+export async function confirmRevocation(req, res, next) {
+  // debugger;
+  // Permission check, note: there is a subsequent check that user is admin of system being changed
+  const hasPermission = req.user.permissions.includes(
+    "accessAssignmentsCanConfirmRevocation"
+  );
+  const isSuperAdmin = req.user.isSuperAdmin;
+  if (!hasPermission && !isSuperAdmin) {
+    return res
+      .status(403)
+      .json({ message: `User has insufficient permissions.` });
+  }
+
+  try {
+    // Confirm pending revocation exists
+    const accessRequest = await AccessRequest.findById(req.params.id);
+    if (!accessRequest) {
+      return res
+        .status(400)
+        .json({ message: "Revocation request could not be found." });
+    }
+
+    // Get admins of system
+    const systemDoc = await SystemApplication.findById(
+      accessRequest.applicationId
+    ).select("adminUser");
+    if (!systemDoc) {
+      return res.status(404).json({ message: "System application not found." });
+    }
+    const admins = systemDoc.adminUser;
+    if (!admins || admins.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No admin users are configured." });
+    }
+
+    // Confirm user is an admin of the system in question from database.
+    const isAdmin = admins.some(
+      (a) => a.toString() === req.user._id.toString()
+    );
+    if (!isAdmin) {
+      return res.status(403).json({
+        message:
+          "User is not an admin of the application system and may not confirm revocation.",
+      });
+    }
+
+    // Confirm user still has access to system in question and delete
+    const deleteAccess = await ActiveAccessAssignment.deleteMany({
+      applicationId: accessRequest.applicationId,
+      userId: accessRequest.userId,
+    }); // Deletes any duplicates that might exist
+
+    // Close request ticket
+    accessRequest.status = "Revoked";
+    accessRequest.completedBy = req.user._id;
+    accessRequest.updatedAt = new Date();
+    await accessRequest.save();
+
+    return res.status(200).json({ message: "Access revocation confirmed." });
+  } catch (error) {
     next(error);
   }
 }
