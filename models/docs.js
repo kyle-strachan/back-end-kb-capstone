@@ -56,4 +56,11 @@ const docSchema = new mongoose.Schema({
   },
 });
 
+// Text index for search
+// In Doc schema
+docSchema.index(
+  { title: "text", description: "text", body: "text" },
+  { weights: { title: 5, description: 3, body: 1 }, name: "DocTextIndex" }
+);
+
 export default mongoose.model("Doc", docSchema);
