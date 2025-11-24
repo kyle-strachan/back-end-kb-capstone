@@ -40,6 +40,7 @@ router.post(
   requirePermission("docs.CanCreateOwnDepartment"),
   newDoc
 );
+////////////////////////////// MUST UPDATE!
 router.patch(
   "/edit/:id",
   authMiddleware,
