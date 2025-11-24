@@ -88,6 +88,11 @@ const userSchema = new mongoose.Schema({
     required: true,
     default: false,
   },
+  roles: {
+    type: [String],
+    default: [],
+    required: false,
+  },
 });
 
 userSchema.methods.isValidPassword = async function (password) {

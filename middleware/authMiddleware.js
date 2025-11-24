@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/users.js";
+import { RolePermissions } from "../utils/permissions.js";
 
 export function signAccessToken(user) {
   return jwt.sign(
@@ -96,6 +97,7 @@ export async function authMiddleware(req, res, next) {
 
 // Add userId for required protected queries
 export async function attachUser(req, res, next) {
+  // debugger;
   // Bypass if testing.
   if (process.env.NODE_ENV === "test") {
     return next(); // skip auth in tests
@@ -119,4 +121,23 @@ export async function attachUser(req, res, next) {
   } catch (error) {
     return next(error);
   }
+}
+
+// Authorization - check roles and permissions to verify user can take the action
+export function requirePermission(permission) {
+  return (req, res, next) => {
+    debugger;
+    console.log(req.user.roles);
+    const isSuperAdmin = req.user.isSuperAdmin;
+    if (isSuperAdmin) return next();
+
+    const userRoles = req.user.roles || [];
+    const allPermissions = userRoles.flatMap(
+      (role) => RolePermissions[role] || []
+    );
+    if (!allPermissions.includes(permission)) {
+      return res.status(403).json({ message: "Insufficient permissions." });
+    }
+    next();
+  };
 }

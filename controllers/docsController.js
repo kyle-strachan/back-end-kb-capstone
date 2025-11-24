@@ -166,13 +166,13 @@ export async function newDoc(req, res, next) {
 export async function editDoc(req, res, next) {
   // debugger;
   // Permission check
-  const hasPermission = req.user.permissions.includes("docsCanCreate");
-  const isSuperAdmin = req.user.isSuperAdmin;
-  if (!hasPermission && !isSuperAdmin) {
-    return res
-      .status(403)
-      .json({ message: `User has insufficient permissions.` });
-  }
+  // const hasPermission = req.user.permissions.includes("docsCanCreate");
+  // const isSuperAdmin = req.user.isSuperAdmin;
+  // if (!hasPermission && !isSuperAdmin) {
+  //   return res
+  //     .status(403)
+  //     .json({ message: `User has insufficient permissions.` });
+  // }
 
   const lastModifiedByUser = req.user.id;
 

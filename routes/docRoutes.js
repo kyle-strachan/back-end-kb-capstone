@@ -10,7 +10,11 @@ import {
   signUrl,
   getDocsSearch,
 } from "../controllers/docsController.js";
-import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
+import {
+  authMiddleware,
+  attachUser,
+  requirePermission,
+} from "../middleware/authMiddleware.js";
 // import { noCache } from ...
 
 const router = Router();
@@ -29,7 +33,19 @@ router.post(
   upload.single("image"),
   uploadImage
 );
-router.post("/", authMiddleware, attachUser, newDoc);
-router.patch("/edit/:id", authMiddleware, attachUser, editDoc);
+router.post(
+  "/",
+  authMiddleware,
+  attachUser,
+  requirePermission("docs.CanCreateOwnDepartment"),
+  newDoc
+);
+router.patch(
+  "/edit/:id",
+  authMiddleware,
+  attachUser,
+  requirePermission("docs.CanCreateOwnDepartment"),
+  editDoc
+);
 
 export default router;
