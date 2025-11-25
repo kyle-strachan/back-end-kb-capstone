@@ -9,13 +9,13 @@ export const RolePermissions = {
     "docs.CanEdit",
     "docs.CanView",
   ],
-  HR: [
+  HumanResources: [
     "users.CanRegister",
     "users.CanTerminate",
     "users.CanEdit",
     "docs.CanViewOwnDepartment",
   ],
-  DepartmentManager: [
+  Manager: [
     "users.CanView",
     "accessRequests.CanViewCreate",
     "docsCategories.CanManage",
@@ -23,6 +23,6 @@ export const RolePermissions = {
     "docs.CanEdit",
     "docs.CanView",
   ],
-  DepartmentSupervisor: ["docs.CanCreate", "docs.CanEdit", "docs.CanView"],
+  Supervisor: ["docs.CanCreate", "docs.CanEdit", "docs.CanView"],
   User: ["docs.CanViewOwnDepartment"],
 };

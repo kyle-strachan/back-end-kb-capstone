@@ -19,7 +19,6 @@ export async function getUsers(req, res, next) {
 }
 
 export async function registerUser(req, res, next) {
-  // TO DO: LOCATION
   try {
     const {
       username,
@@ -29,7 +28,7 @@ export async function registerUser(req, res, next) {
       email,
       position,
       password,
-      // permissions,
+      roles,
     } = req.body;
 
     if (!fullName || !fullName.trim()) {
@@ -44,6 +43,8 @@ export async function registerUser(req, res, next) {
       return res.status(400).json({ message: "Location is required." });
     }
 
+    // A user is permitted to have zero roles (e.g. external supplier)
+
     const minimumDepartments = 1;
     const departmentError = validateObjectIdArray(
       department,
@@ -53,16 +54,6 @@ export async function registerUser(req, res, next) {
     if (departmentError)
       return res.status(400).json({ message: `${departmentError}` });
 
-    // const minimumPermissions = 0;
-    // const permissionsError = validateObjectIdArray(
-    //   permissions,
-    //   "Permission",
-    //   minimumPermissions
-    // );
-    // if (permissionsError) {
-    //   return res.status(400).json({ message: `${permissionsError}` });
-    // }
-
     const existingUsername = await User.findOne({
       username: username.toLowerCase().trim(),
     });
@@ -70,7 +61,7 @@ export async function registerUser(req, res, next) {
       return res.status(400).json({ message: `Username already exists.` });
     }
 
-    await User.create({
+    const newUser = await User.create({
       username: username.toLowerCase().trim(),
       fullName: fullName.trim(),
       location,
@@ -78,19 +69,22 @@ export async function registerUser(req, res, next) {
       email: email.toLowerCase().trim(),
       position: position.trim(),
       passwordHash: password,
-      // permissions,
+      roles,
     });
-    return res
-      .status(200)
-      .json({ message: `${username} successfully created.` });
+    // debugger;
+    return res.status(200).json({
+      message: `${username} successfully created.`,
+      newId: newUser.id,
+    });
   } catch (error) {
     next(error);
   }
 }
 
 export async function editUser(req, res, next) {
+  debugger;
   try {
-    const { fullName, location, department, email, position } = req.body;
+    const { fullName, location, department, email, position, roles } = req.body;
 
     if (!fullName || !fullName.trim()) {
       return res.status(400).json({ message: "Full name is required." });
@@ -104,6 +98,8 @@ export async function editUser(req, res, next) {
       return res.status(400).json({ message: "Location is required." });
     }
 
+    // A user is permitted to have zero roles (e.g. external supplier)
+
     const minimumDepartments = 1;
     const departmentError = validateObjectIdArray(
       department,
@@ -114,16 +110,6 @@ export async function editUser(req, res, next) {
       return res.status(400).json({ message: `${departmentError}` });
     }
 
-    // const minimumPermissions = 0;
-    // const permissionsError = validateObjectIdArray(
-    //   permissions,
-    //   "Permission",
-    //   minimumPermissions
-    // );
-    // if (permissionsError) {
-    //   return res.status(400).json({ message: `${permissionsError}` });
-    // }
-
     const editUser = await User.findByIdAndUpdate(
       req.params.id,
       {
@@ -132,7 +118,7 @@ export async function editUser(req, res, next) {
         department,
         email,
         position,
-        // permissions,
+        roles,
         isActive: true, // Force for all saves - allows reactivate to work.
       },
       { runValidators: true, new: true }

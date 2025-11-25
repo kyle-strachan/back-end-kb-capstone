@@ -119,9 +119,9 @@ router.get(
   "/departments",
   authMiddleware,
   attachUser,
-  requirePermission("departments.CanManage"),
+  // requirePermission("departments.CanManage"),
   getDepartments
-); // Get all departments
+); // Get all departments, no permission required, populates drop down boxes.
 router.post(
   "/departments",
   authMiddleware,
@@ -158,13 +158,7 @@ router.put(
 // );
 
 // Doc categories
-router.get(
-  "/docs-categories",
-  authMiddleware,
-  attachUser,
-  requirePermission("docsCategories.CanManage"),
-  getDocsCategories
-); // Get all document categories
+router.get("/docs-categories", authMiddleware, attachUser, getDocsCategories); // Get all document categories, no permission check, populates drop down boxes
 router.post(
   "/docs-categories",
   authMiddleware,
