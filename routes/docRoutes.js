@@ -15,38 +15,75 @@ import {
   attachUser,
   requirePermission,
 } from "../middleware/authMiddleware.js";
-// import { noCache } from ...
 
 const router = Router();
 
-// All prefixed /api/docs
-router.get("/", authMiddleware, attachUser, getDocs); // Get all docs appropriate of users based on canViewAllDocs etc.
-router.get("/tree", authMiddleware, attachUser, getDocsTree); // To output the explorer
-router.get("/search", authMiddleware, attachUser, getDocsSearch);
-router.get("/:id/sign-url", signUrl);
-router.get("/:id", authMiddleware, attachUser, getDoc); // get single doc
+// Router controls all document routes
+// Prefix: /api/docs
+
+router.get(
+  "/",
+  authMiddleware,
+  attachUser,
+  requirePermission("docs.CanView"),
+  getDocs
+); // Gets list of all department documents that user is member of
+
+router.get(
+  "/tree",
+  authMiddleware,
+  attachUser,
+  requirePermission("docs.CanView"),
+  getDocsTree
+); // Outputs the document tree explorer
+
+router.get(
+  "/search",
+  authMiddleware,
+  attachUser,
+  requirePermission("docs.CanView"),
+  getDocsSearch
+); // Return document results from search
+
+router.get(
+  "/:id/sign-url",
+  authMiddleware,
+  attachUser,
+  requirePermission("docs.CanView"),
+  signUrl
+); // Gets pre-signed URL from storage if document renders an image
+
+router.get(
+  "/:id",
+  authMiddleware,
+  attachUser,
+  requirePermission("docs.CanView"),
+  getDoc
+); // Gets a single document
 
 router.post(
   "/:id/upload-image",
   authMiddleware,
   attachUser,
+  requirePermission("docs.CanEdit"),
   upload.single("image"),
   uploadImage
-);
+); // Uploads an image to the storage account
+
 router.post(
   "/",
   authMiddleware,
   attachUser,
-  requirePermission("docs.CanCreateOwnDepartment"),
+  requirePermission("docs.CanCreate"),
   newDoc
-);
-////////////////////////////// MUST UPDATE!
+); // Create a new document
+
 router.patch(
   "/edit/:id",
   authMiddleware,
   attachUser,
-  requirePermission("docs.CanCreateOwnDepartment"),
+  requirePermission("docs.CanEdit"),
   editDoc
-);
+); // Edits an existing document
 
 export default router;

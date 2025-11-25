@@ -5,15 +5,44 @@ import {
   editUser,
   terminateUser,
 } from "../controllers/userController.js";
-import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
-// import { noCache } from ...
+import {
+  authMiddleware,
+  attachUser,
+  requirePermission,
+} from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-// Users
-router.post("/", authMiddleware, attachUser, registerUser);
-router.get("/", authMiddleware, attachUser, getUsers);
-router.put("/:id", authMiddleware, attachUser, editUser);
-router.patch("/:id", authMiddleware, attachUser, terminateUser);
+// Router controls all user profile access
+// Prefix: /api/users
+
+router.get(
+  "/",
+  authMiddleware,
+  attachUser,
+  requirePermission("users.CanView"),
+  getUsers
+); // View users
+router.post(
+  "/",
+  authMiddleware,
+  attachUser,
+  requirePermission("users.CanRegister"),
+  registerUser
+); // Create new user
+router.put(
+  "/:id",
+  authMiddleware,
+  attachUser,
+  requirePermission("users.CanEdit"),
+  editUser
+); // Edit existing user
+router.patch(
+  "/:id",
+  authMiddleware,
+  attachUser,
+  requirePermission("users.CanTerminate"),
+  terminateUser
+); // Special edit/terminate user
 
 export default router;

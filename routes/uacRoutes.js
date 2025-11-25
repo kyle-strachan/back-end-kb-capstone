@@ -4,66 +4,73 @@ import {
   getAccessRequests,
   newAccessRequest,
   approveOrRejectRequest,
-  revokeAccessRequest,
+  createRevokeAccessRequest,
   getToActionAccessRequests,
-  getMyAccessRequests,
-  getByAccessRequests,
   confirmRevocation,
 } from "../controllers/uacController.js";
-import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
-// import { noCache } from ...
+import {
+  authMiddleware,
+  attachUser,
+  requirePermission,
+} from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-// Assignments
-// Can only be viewed, assignments are created and deleted using request approvals..
+// Router controls all ticket requests for access to systems, and action those requests.
+// Prefix: /api/uac
+
 router.get(
   "/access-assignments",
   authMiddleware,
   attachUser,
+  requirePermission("accessRequests.CanViewCreate"),
   getAccessAssignments
-);
+); // *Assignments* are not directly managed, instead they are controlled via access *requests* and share a permission
 
 router.post(
   "/access-assignments/confirm-revoke/:id",
   authMiddleware,
   attachUser,
   confirmRevocation
-);
-// Create a request to revoke access
+); // Actions the request to remove a user from a system. Actioning user must be admin of system, not route permission controlled.
+
 router.post(
-  "/access-assignments/revoke",
+  "/access-requests/revoke",
   authMiddleware,
   attachUser,
-  revokeAccessRequest
-);
+  requirePermission("accessRequests.CanViewCreate"),
+  createRevokeAccessRequest
+); // Creates a ticket to revoke access.
 
-// Requests
-router.get("/access-requests", authMiddleware, attachUser, getAccessRequests);
+router.get(
+  "/access-requests",
+  authMiddleware,
+  attachUser,
+  requirePermission("accessRequests.CanViewCreate"),
+  getAccessRequests
+); // Display all pending access requests
+
 router.get(
   "/access-requests/to-action",
   authMiddleware,
   attachUser,
+  requirePermission("accessRequests.CanViewCreate"),
   getToActionAccessRequests
-);
-router.get(
-  "/access-requests/my-requests",
+); // Display list of request that user can action - TO DO: can I use a filter on access-requests to remove similar action?
+
+router.post(
+  "/access-requests",
   authMiddleware,
   attachUser,
-  getMyAccessRequests
-);
-router.get(
-  "/access-requests/by-requests",
-  authMiddleware,
-  attachUser,
-  getByAccessRequests
-);
-router.post("/access-requests", authMiddleware, attachUser, newAccessRequest);
+  requirePermission("accessRequests.CanViewCreate"),
+  newAccessRequest
+); // Create a new access/revoke request ticket
+
 router.patch(
   "/access-requests/:id",
   authMiddleware,
   attachUser,
   approveOrRejectRequest
-);
+); // Approve or deny request ticket. User must be admin of specific system. Route permission not enforced.
 
 export default router;
