@@ -4,35 +4,9 @@ import { isValidObjectId, validateObjectIdArray } from "../utils/validation.js";
 const minimumDocumentCategoryLength = 3;
 
 export async function getDocsCategories(req, res, next) {
-  // No permission check required, populates non-sensitive drop down boxes
-
   try {
-    // debugger;
     const { user } = req;
     const { departmentId } = req.query;
-    // let filter = {};
-
-    // const permissionNames = user.permissions.map((p) => p.permissionName);
-    // const canViewAll = permissionNames.includes(
-    //   "configCanViewAllDepartmentCategories"
-    // );
-    // const canViewOwn = permissionNames.includes(
-    //   "configCanViewOwnDepartmentCategories"
-    // );
-    // const isSuperAdmin = permissionNames.includes("isSuperAdmin");
-
-    // if (canViewAll || isSuperAdmin) {
-    //   filter = {}; // no filter required
-    // } else if (
-    //   canViewOwn &&
-    //   Array.isArray(user.department) &&
-    //   user.department.length > 0
-    // ) {
-    //   filter = { departmentId: { $in: user.department } }; // limit to user's own department
-    // } else {
-    //   return res.status(403).json({ message: "Access denied." });
-    // }
-
     let filter = {};
     if (departmentId) {
       filter = { departmentId: departmentId };
@@ -49,17 +23,6 @@ export async function getDocsCategories(req, res, next) {
 }
 
 export async function newDocsCategory(req, res, next) {
-  // Permission check
-  const hasPermission = req.user.permissions.includes(
-    "docsCategoriesCanManage"
-  );
-  const isSuperAdmin = req.user.isSuperAdmin;
-  if (!hasPermission && !isSuperAdmin) {
-    return res
-      .status(403)
-      .json({ message: `User has insufficient permissions.` });
-  }
-
   try {
     const { departmentId, category } = req.body;
 
@@ -79,7 +42,6 @@ export async function newDocsCategory(req, res, next) {
         .json({ message: `Category must have a minimum of three characters.` });
     }
 
-    // debugger;
     const newCategory = await DocsCategory.create({ departmentId, category });
     if (!newCategory) {
       return res
@@ -96,18 +58,6 @@ export async function newDocsCategory(req, res, next) {
 }
 
 export async function editDocsCategory(req, res, next) {
-  // Permission check
-  // debugger;
-  const hasPermission = req.user.permissions.includes(
-    "docsCategoriesCanManage"
-  );
-  const isSuperAdmin = req.user.isSuperAdmin;
-  if (!hasPermission && !isSuperAdmin) {
-    return res
-      .status(403)
-      .json({ message: `User has insufficient permissions.` });
-  }
-
   try {
     const updates = req.body.updates;
 
@@ -128,7 +78,6 @@ export async function editDocsCategory(req, res, next) {
         continue;
       }
       // Check document category name is long enough.
-      // debugger;
       if (update.category.trim().length < minimumDocumentCategoryLength) {
         results.push({
           id: update._id,

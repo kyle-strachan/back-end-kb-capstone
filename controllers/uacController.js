@@ -4,17 +4,6 @@ import SystemApplication from "../models/configSystemApplications.js";
 import { isValidObjectId } from "../utils/validation.js";
 
 export async function getAccessAssignments(req, res, next) {
-  // Permission check
-  const hasPermission = req.user.permissions.includes(
-    "accessAssignmentsCanView"
-  );
-  const isSuperAdmin = req.user.isSuperAdmin;
-  if (!hasPermission && !isSuperAdmin) {
-    return res
-      .status(403)
-      .json({ message: `User has insufficient permissions.` });
-  }
-
   // Single route accepts multiple filters
   try {
     // debugger;
@@ -30,10 +19,7 @@ export async function getAccessAssignments(req, res, next) {
       .populate("completedBy")
       .populate("applicationId");
 
-    // If assignments array is empty, do not send 404
-    // if (assignments.length === 0) {
-    //   return res.status(404).json({ message: "No access assignments found." });
-    // }
+    // Continue to return empty array if no assignment are found
 
     return res.status(200).json({ assignments });
   } catch (error) {
@@ -42,19 +28,9 @@ export async function getAccessAssignments(req, res, next) {
 }
 
 export async function getAccessRequests(req, res, next) {
-  // Permission check
-  const hasPermission = req.user.permissions.includes("accessRequestsCanView");
-  const isSuperAdmin = req.user.isSuperAdmin;
-  if (!hasPermission && !isSuperAdmin) {
-    return res
-      .status(403)
-      .json({ message: `User has insufficient permissions.` });
-  }
-
-  // Single route accepts multiple filters
   // Returns a record of all the *requests*
+  // Single route accepts multiple filters
   try {
-    // debugger;
     // Read query parameters of all possible filters
     const {
       userId,
@@ -90,12 +66,8 @@ export async function getAccessRequests(req, res, next) {
       .populate("applicationId", "system")
       .sort({ requestedAt: -1 });
 
-    // If accessRequests.length === 0 continue to return empty array.
-    // if (accessRequests.length === 0) {
-    //   return res.status(404).json({ message: "No access requests found." });
-    // }
+    // Continue to return empty array if no requests are found
 
-    // debugger;
     return res.status(200).json({ accessRequests });
   } catch (error) {
     next(error);
@@ -103,16 +75,6 @@ export async function getAccessRequests(req, res, next) {
 }
 
 export async function newAccessRequest(req, res, next) {
-  // Permission check
-  const hasPermission = req.user.permissions.includes(
-    "accessRequestsCanCreate"
-  );
-  const isSuperAdmin = req.user.isSuperAdmin;
-  if (!hasPermission && !isSuperAdmin) {
-    return res
-      .status(403)
-      .json({ message: `User has insufficient permissions.` });
-  }
   try {
     const { userId, applicationId, requestNote } = req.body;
     const requestedBy = req.user._id;
@@ -126,12 +88,6 @@ export async function newAccessRequest(req, res, next) {
         .status(400)
         .json({ message: "userId is not a valid ObjectId." });
     }
-
-    // if (!isValidObjectId(requestedBy)) {
-    //   return res
-    //     .status(400)
-    //     .json({ message: "requestedById is not a valid ObjectId." });
-    // }
 
     // Validate front-end app Ids
     applicationId.forEach((app) => {
@@ -152,7 +108,6 @@ export async function newAccessRequest(req, res, next) {
 
     for (const appId of applicationId) {
       try {
-        // debugger;
         // Check for existing/duplicate request. OK to have existing Rejected/Terminated requested. Approved request will be caught in existing access.
         const existingRequest = await AccessRequest.findOne({
           userId,
@@ -191,7 +146,7 @@ export async function newAccessRequest(req, res, next) {
         results.errors.push({ appId, error: err.message });
       }
     }
-    // debugger;
+
     return res.status(201).json({
       message: "Processing completed.",
       results,
@@ -202,18 +157,6 @@ export async function newAccessRequest(req, res, next) {
 }
 
 export async function approveOrRejectRequest(req, res, next) {
-  // debugger;
-  // Permission check, note: there is a subsequent check that user is admin of system being changes
-  const hasPermission = req.user.permissions.includes(
-    "accessRequestsCanApproveReject"
-  );
-  const isSuperAdmin = req.user.isSuperAdmin;
-  if (!hasPermission && !isSuperAdmin) {
-    return res
-      .status(403)
-      .json({ message: `User has insufficient permissions.` });
-  }
-
   try {
     const id = req.params.id;
     const { action } = req.body;
@@ -232,7 +175,6 @@ export async function approveOrRejectRequest(req, res, next) {
     }
 
     // Get system id
-    // debugger;
     const requestDoc = await AccessRequest.findById(id);
     if (!requestDoc) {
       return res.status(404).json({ message: "Access request not found." });
@@ -320,25 +262,13 @@ export async function approveOrRejectRequest(req, res, next) {
   }
 }
 
-export async function revokeAccessRequest(req, res, next) {
-  // Permission check
-  debugger;
-  const hasPermission = req.user.permissions.includes(
-    "accessRequestsCanRevoke"
-  );
-  const isSuperAdmin = req.user.isSuperAdmin;
-  if (!hasPermission && !isSuperAdmin) {
-    return res
-      .status(403)
-      .json({ message: `User has insufficient permissions.` });
-  }
-
+export async function createRevokeAccessRequest(req, res, next) {
   try {
     const { ids } = req.body;
     const requestedBy = req.user._id;
     const results = await processRevocations(ids, requestedBy);
 
-    return res.status(201).json({
+    return res.status(200).json({
       message: "Processing completed.",
       results,
     });
@@ -348,7 +278,6 @@ export async function revokeAccessRequest(req, res, next) {
 }
 
 export async function processRevocations(ids, requestedBy) {
-  // debugger;
   try {
     // Track results
     const results = {
@@ -414,18 +343,8 @@ export async function processRevocations(ids, requestedBy) {
   }
 }
 
-export function getMyAccessRequests(req, res, next) {
-  try {
-    // const results = await;
-  } catch (error) {}
-}
-
-export function getByAccessRequests(req, res, next) {
-  try {
-  } catch (error) {}
-}
-
 export async function getToActionAccessRequests(req, res, next) {
+  // Display requests that user can action
   try {
     const adminSystems = await SystemApplication.find({
       adminUser: req.user._id,
@@ -443,7 +362,6 @@ export async function getToActionAccessRequests(req, res, next) {
       .populate("applicationId", "system")
       .sort({ requestedAt: -1 });
 
-    // debugger;
     return res
       .status(200)
       .json({ toActionRequests, total: toActionRequests.length });
@@ -454,18 +372,6 @@ export async function getToActionAccessRequests(req, res, next) {
 }
 
 export async function confirmRevocation(req, res, next) {
-  // debugger;
-  // Permission check, note: there is a subsequent check that user is admin of system being changed
-  const hasPermission = req.user.permissions.includes(
-    "accessAssignmentsCanConfirmRevocation"
-  );
-  const isSuperAdmin = req.user.isSuperAdmin;
-  if (!hasPermission && !isSuperAdmin) {
-    return res
-      .status(403)
-      .json({ message: `User has insufficient permissions.` });
-  }
-
   try {
     // Confirm pending revocation exists
     const accessRequest = await AccessRequest.findById(req.params.id);

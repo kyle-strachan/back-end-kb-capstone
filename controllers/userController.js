@@ -20,16 +20,6 @@ export async function getUsers(req, res, next) {
 
 export async function registerUser(req, res, next) {
   // TO DO: LOCATION
-
-  // Permission check
-  const hasPermission = req.user.permissions.includes("userCanRegister");
-  const isSuperAdmin = req.user.isSuperAdmin;
-  if (!hasPermission && !isSuperAdmin) {
-    return res
-      .status(403)
-      .json({ message: `User has insufficient permissions.` });
-  }
-
   try {
     const {
       username,
@@ -99,18 +89,6 @@ export async function registerUser(req, res, next) {
 }
 
 export async function editUser(req, res, next) {
-  // debugger;
-  // Admin only to edit any part of user (except username). Password handled separately.
-
-  // Permission check
-  const hasPermission = req.user.permissions.includes("userCanEdit");
-  const isSuperAdmin = req.user.isSuperAdmin;
-  if (!hasPermission && !isSuperAdmin) {
-    return res
-      .status(403)
-      .json({ message: `User has insufficient permissions.` });
-  }
-
   try {
     const { fullName, location, department, email, position, permissions } =
       req.body;
@@ -174,15 +152,6 @@ export async function editUser(req, res, next) {
 }
 
 export async function terminateUser(req, res, next) {
-  // Permission check
-  const hasPermission = req.user.permissions.includes("userCanTerminate");
-  const isSuperAdmin = req.user.isSuperAdmin;
-  if (!hasPermission && !isSuperAdmin) {
-    return res
-      .status(403)
-      .json({ message: `User has insufficient permissions.` });
-  }
-
   const requestedBy = req.user._id;
   const userId = req.params.id;
 

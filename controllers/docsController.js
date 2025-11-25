@@ -1,42 +1,16 @@
 import Doc from "../models/docs.js";
 import { isValidObjectId } from "../utils/validation.js";
-import { upload } from "../utils/multer.js";
 import { wasabi } from "../utils/wasabi.js";
-import express from "express";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
-import { ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import createDOMPurify from "dompurify";
 import { JSDOM } from "jsdom";
-// import { GetObjectCommand } from "@aws-sdk/client-s3";
-// import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // TO DO: USER FIELD AND AT FIELDS MUST BE POPULATED
 
-// Permission check, note: there is a subsequent check that user is admin of system being changes
-// const hasPermission = req.user.permissions.includes(
-//   "accessRequestsCanApproveReject"
-// );
-// const isSuperAdmin = req.user.isSuperAdmin;
-// if (!hasPermission && !isSuperAdmin) {
-//   return res
-//     .status(403)
-//     .json({ message: `User has insufficient permissions.` });
-// }
-
 export async function getDocs(req, res, next) {
-  // Permission check
-  // const hasPermission = req.user.permissions.includes("systemsCanManage");
-  // const isSuperAdmin = req.user.isSuperAdmin;
-  // if (!hasPermission && !isSuperAdmin) {
-  //   return res
-  //     .status(403)
-  //     .json({ message: `User has insufficient permissions.` });
-  // }
-
-  // debugger;
-
   try {
     const docs = await Doc.find()
       .sort({ name: 1 })
@@ -53,17 +27,6 @@ export async function getDocs(req, res, next) {
 }
 
 export async function getDoc(req, res, next) {
-  // Permission check
-  // const hasPermission = req.user.permissions.includes("systemsCanManage");
-  // const isSuperAdmin = req.user.isSuperAdmin;
-  // if (!hasPermission && !isSuperAdmin) {
-  //   return res
-  //     .status(403)
-  //     .json({ message: `User has insufficient permissions.` });
-  // }
-
-  // debugger;
-
   try {
     const docId = req.params.id;
     const doc = await Doc.findById(docId)
@@ -80,18 +43,7 @@ export async function getDoc(req, res, next) {
 }
 
 export async function newDoc(req, res, next) {
-  // debugger;
-  // Permission check
-  const hasPermission = req.user.permissions.includes("docsCanCreate");
-  const isSuperAdmin = req.user.isSuperAdmin;
-  if (!hasPermission && !isSuperAdmin) {
-    return res
-      .status(403)
-      .json({ message: `User has insufficient permissions.` });
-  }
-
   const lastModifiedByUser = req.user.id;
-
   try {
     const {
       title,
@@ -147,8 +99,6 @@ export async function newDoc(req, res, next) {
       isArchived,
     });
 
-    debugger;
-
     if (!doc) {
       return res
         .status(400)
@@ -164,16 +114,6 @@ export async function newDoc(req, res, next) {
 }
 
 export async function editDoc(req, res, next) {
-  // debugger;
-  // Permission check
-  // const hasPermission = req.user.permissions.includes("docsCanCreate");
-  // const isSuperAdmin = req.user.isSuperAdmin;
-  // if (!hasPermission && !isSuperAdmin) {
-  //   return res
-  //     .status(403)
-  //     .json({ message: `User has insufficient permissions.` });
-  // }
-
   const lastModifiedByUser = req.user.id;
 
   try {
@@ -246,8 +186,6 @@ export async function editDoc(req, res, next) {
 }
 
 export async function getDocsTree(req, res, next) {
-  // debugger;
-
   try {
     // Get all docs
     const docs = await Doc.find()
@@ -321,7 +259,6 @@ export async function getDocsTree(req, res, next) {
 }
 
 export async function uploadImage(req, res, next) {
-  // debugger;
   try {
     const docId = req.params.id;
 
@@ -375,7 +312,7 @@ export async function uploadImage(req, res, next) {
 
 export async function signUrl(req, res, next) {
   try {
-    const { key } = req.query; // e.g. "documents/6921.../1763775.webp"
+    const { key } = req.query; // e.g. "documents/6921.../12345.webp"
     const Bucket = process.env.WASABI_BUCKET;
 
     const signedUrl = await getSignedUrl(
@@ -456,7 +393,6 @@ export async function getDocsSearch(req, res, next) {
       ),
     }));
 
-    // debugger;
     res.json({
       query: q,
       page,
@@ -468,14 +404,6 @@ export async function getDocsSearch(req, res, next) {
     next(error);
   }
 }
-
-// function cleanSnippet(snippet) {
-//   // Allow only inline formatting tags, strip block-level tags
-//   return DOMPurify.sanitize(snippet, {
-//     ALLOWED_TAGS: ["b", "i", "em", "strong", "span"],
-//     ALLOWED_ATTR: [],
-//   });
-// }
 
 const window = new JSDOM("").window;
 const DOMPurify = createDOMPurify(window);

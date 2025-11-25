@@ -2,15 +2,6 @@ import BusinessRole from "../models/configBusinessRoles.js";
 import { validateObjectIdArray } from "../utils/validation.js";
 
 export async function getBusinessRoles(req, res, next) {
-  // Permission check
-  // const hasPermission = req.user.permissions.includes("systemsCanManage");
-  // const isSuperAdmin = req.user.isSuperAdmin;
-  // if (!hasPermission && !isSuperAdmin) {
-  //   return res
-  //     .status(403)
-  //     .json({ message: `User has insufficient permissions.` });
-  // }
-
   try {
     const businessRoles = await BusinessRole.find().sort({ roleName: 1 });
     if (!businessRoles || businessRoles.length === 0) {
@@ -57,14 +48,6 @@ export async function newBusinessRole(req, res, next) {
 }
 
 export async function editBusinessRole(req, res, next) {
-  // Permission check
-  // const hasPermission = req.user.permissions.includes("systemsCanManage");
-  // const isSuperAdmin = req.user.isSuperAdmin;
-  // if (!hasPermission && !isSuperAdmin) {
-  //   return res
-  //     .status(403)
-  //     .json({ message: `User has insufficient permissions.` });
-  // }
   try {
     const { roleName, defaultAccessRequests, isActive, description } = req.body;
 

@@ -2,14 +2,6 @@ import PlatformRole from "../models/configPlatformRoles.js";
 import { validateObjectIdArray } from "../utils/validation.js";
 
 export async function getPlatformRoles(req, res, next) {
-  // Permission check
-  // const hasPermission = req.user.permissions.includes("systemsCanManage");
-  // const isSuperAdmin = req.user.isSuperAdmin;
-  // if (!hasPermission && !isSuperAdmin) {
-  //   return res
-  //     .status(403)
-  //     .json({ message: `User has insufficient permissions.` });
-  // }
   try {
     const platformRoles = await PlatformRole.find().sort({ roleName: 1 });
     if (!platformRoles || platformRoles.length === 0) {
@@ -22,14 +14,6 @@ export async function getPlatformRoles(req, res, next) {
 }
 
 export async function newPlatformRole(req, res, next) {
-  // Permission check
-  // const hasPermission = req.user.permissions.includes("systemsCanManage");
-  // const isSuperAdmin = req.user.isSuperAdmin;
-  // if (!hasPermission && !isSuperAdmin) {
-  //   return res
-  //     .status(403)
-  //     .json({ message: `User has insufficient permissions.` });
-  // }
   try {
     const { roleName, description, permissions } = req.body;
 
@@ -64,14 +48,6 @@ export async function newPlatformRole(req, res, next) {
 }
 
 export async function editPlatformRole(req, res, next) {
-  // Permission check
-  // const hasPermission = req.user.permissions.includes("systemsCanManage");
-  // const isSuperAdmin = req.user.isSuperAdmin;
-  // if (!hasPermission && !isSuperAdmin) {
-  //   return res
-  //     .status(403)
-  //     .json({ message: `User has insufficient permissions.` });
-  // }
   try {
     const { roleName, description, isActive, permissions } = req.body;
 
