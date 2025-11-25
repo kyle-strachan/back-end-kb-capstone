@@ -34,7 +34,6 @@ import {
   getDocsCategories,
   newDocsCategory,
 } from "../controllers/configDocsCategoriesController.js";
-import { getPermissions } from "../controllers/configPermissionsController.js";
 import {
   authMiddleware,
   attachUser,
