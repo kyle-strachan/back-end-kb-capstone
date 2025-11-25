@@ -107,9 +107,8 @@ export async function attachUser(req, res, next) {
     if (!req.userId) {
       return res.status(401).json({ message: "User not authorised." });
     }
-    const user = await User.findById(req.userId)
-      .select("-passwordHash")
-      .populate("permissions", "permissionName");
+    const user = await User.findById(req.userId).select("-passwordHash");
+    // .populate("permissions", "permissionName");
     if (!user) {
       return res.status(401).json({ message: "User not authorised." });
     }

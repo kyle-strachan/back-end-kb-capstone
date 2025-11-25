@@ -29,7 +29,7 @@ export async function registerUser(req, res, next) {
       email,
       position,
       password,
-      permissions,
+      // permissions,
     } = req.body;
 
     if (!fullName || !fullName.trim()) {
@@ -53,15 +53,15 @@ export async function registerUser(req, res, next) {
     if (departmentError)
       return res.status(400).json({ message: `${departmentError}` });
 
-    const minimumPermissions = 0;
-    const permissionsError = validateObjectIdArray(
-      permissions,
-      "Permission",
-      minimumPermissions
-    );
-    if (permissionsError) {
-      return res.status(400).json({ message: `${permissionsError}` });
-    }
+    // const minimumPermissions = 0;
+    // const permissionsError = validateObjectIdArray(
+    //   permissions,
+    //   "Permission",
+    //   minimumPermissions
+    // );
+    // if (permissionsError) {
+    //   return res.status(400).json({ message: `${permissionsError}` });
+    // }
 
     const existingUsername = await User.findOne({
       username: username.toLowerCase().trim(),
@@ -78,7 +78,7 @@ export async function registerUser(req, res, next) {
       email: email.toLowerCase().trim(),
       position: position.trim(),
       passwordHash: password,
-      permissions,
+      // permissions,
     });
     return res
       .status(200)
@@ -90,8 +90,7 @@ export async function registerUser(req, res, next) {
 
 export async function editUser(req, res, next) {
   try {
-    const { fullName, location, department, email, position, permissions } =
-      req.body;
+    const { fullName, location, department, email, position } = req.body;
 
     if (!fullName || !fullName.trim()) {
       return res.status(400).json({ message: "Full name is required." });
@@ -115,15 +114,15 @@ export async function editUser(req, res, next) {
       return res.status(400).json({ message: `${departmentError}` });
     }
 
-    const minimumPermissions = 0;
-    const permissionsError = validateObjectIdArray(
-      permissions,
-      "Permission",
-      minimumPermissions
-    );
-    if (permissionsError) {
-      return res.status(400).json({ message: `${permissionsError}` });
-    }
+    // const minimumPermissions = 0;
+    // const permissionsError = validateObjectIdArray(
+    //   permissions,
+    //   "Permission",
+    //   minimumPermissions
+    // );
+    // if (permissionsError) {
+    //   return res.status(400).json({ message: `${permissionsError}` });
+    // }
 
     const editUser = await User.findByIdAndUpdate(
       req.params.id,
@@ -133,7 +132,7 @@ export async function editUser(req, res, next) {
         department,
         email,
         position,
-        permissions,
+        // permissions,
         isActive: true, // Force for all saves - allows reactivate to work.
       },
       { runValidators: true, new: true }

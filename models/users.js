@@ -74,15 +74,15 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  permissions: {
-    type: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Permission",
-      },
-    ],
-    default: [],
-  },
+  // permissions: {
+  //   type: [
+  //     {
+  //       type: mongoose.Schema.Types.ObjectId,
+  //       ref: "Permission",
+  //     },
+  //   ],
+  //   default: [],
+  // },
   isSuperAdmin: {
     type: Boolean,
     required: true,
