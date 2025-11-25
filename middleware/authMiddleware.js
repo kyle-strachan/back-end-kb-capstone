@@ -126,7 +126,7 @@ export async function attachUser(req, res, next) {
 // Authorization - check roles and permissions to verify user can take the action
 export function requirePermission(permission) {
   return (req, res, next) => {
-    debugger;
+    // debugger;
     console.log(req.user.roles);
     const isSuperAdmin = req.user.isSuperAdmin;
     if (isSuperAdmin) return next();
