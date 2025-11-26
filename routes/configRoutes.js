@@ -20,16 +20,6 @@ import {
   newSystemApplication,
 } from "../controllers/configSystemApplicationsController.js";
 import {
-  editBusinessRole,
-  getBusinessRoles,
-  newBusinessRole,
-} from "../controllers/configSystemBusinessRolesController.js";
-import {
-  editPlatformRole,
-  getPlatformRoles,
-  newPlatformRole,
-} from "../controllers/configPlatformRolesController.js";
-import {
   editDocsCategory,
   getDocsCategories,
   newDocsCategory,
@@ -136,26 +126,6 @@ router.put(
   requirePermission("departments.CanManage"),
   editDepartments
 ); // Edit an existing department
-
-// Config business roles
-// router.get("/business-roles", authMiddleware, attachUser, getBusinessRoles);
-// router.post("/business-roles", authMiddleware, attachUser, newBusinessRole);
-// router.patch(
-//   "/business-roles/:id",
-//   authMiddleware,
-//   attachUser,
-//   editBusinessRole
-// );
-
-// Config platform roles
-// router.get("/platform-roles", authMiddleware, attachUser, getPlatformRoles);
-// router.post("/platform-roles", authMiddleware, attachUser, newPlatformRole);
-// router.patch(
-//   "/platform-roles/:id",
-//   authMiddleware,
-//   attachUser,
-//   editPlatformRole
-// );
 
 // Doc categories
 router.get("/docs-categories", authMiddleware, attachUser, getDocsCategories); // Get all document categories, no permission check, populates drop down boxes
