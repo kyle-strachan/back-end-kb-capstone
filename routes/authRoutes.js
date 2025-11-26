@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { login, logout, resetPassword } from "../controllers/authController.js";
+import {
+  login,
+  logout,
+  resetPassword,
+  changePassword,
+} from "../controllers/authController.js";
 import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
 
 const router = Router();
@@ -9,7 +14,8 @@ const router = Router();
 
 router.post("/login", login); // Public route
 router.post("/logout", authMiddleware, logout);
-router.post("/reset", authMiddleware, resetPassword);
+router.post("/reset", authMiddleware, attachUser, resetPassword); // Reset by an admin
+router.patch("/change-password", authMiddleware, attachUser, changePassword); // Changed by user
 router.get("/me", authMiddleware, attachUser, (req, res) => {
   res.json({ user: req.user });
 });

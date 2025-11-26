@@ -126,6 +126,7 @@ export async function resetPassword(req, res) {
       return res.status(404).json({ message: "User not found." });
     }
 
+    user.passwordMustChange = true;
     // user.passwordHash = await user.hashPassword(newPassword);
     user.passwordHash = newPassword; // hashing moved to model
     user.tokenVersion += 1;
@@ -134,5 +135,30 @@ export async function resetPassword(req, res) {
     res.status(200).json({ message: "Password reset successful." });
   } catch (error) {
     res.status(500).json({ message: "Error resetting password." });
+  }
+}
+
+export async function changePassword(req, res) {
+  debugger;
+  try {
+    const { newPassword } = req.body;
+    const userIdToChange = req.user._id;
+    const user = await User.findById(userIdToChange);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "User not found, unable to update password." });
+    }
+
+    user.passwordMustChange = false;
+    user.passwordUpdatedBy = user.id;
+    user.passwordUpdatedAt = new Date();
+    user.passwordHash = newPassword; // hashing moved to model
+    user.tokenVersion += 1;
+    await user.save();
+
+    res.status(200).json({ message: "Password changed successfully." });
+  } catch (error) {
+    res.status(500).json({ message: "Unknown error changing password." });
   }
 }
