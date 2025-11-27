@@ -81,6 +81,7 @@ export async function login(req, res) {
         username: user.username,
         department: user.department,
         location: user.location,
+        passwordMustChange: user.passwordMustChange,
       },
     });
   } catch (error) {
