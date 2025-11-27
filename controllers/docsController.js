@@ -187,8 +187,15 @@ export async function editDoc(req, res, next) {
 
 export async function getDocsTree(req, res, next) {
   try {
-    // Get all docs
-    const docs = await Doc.find()
+    // Get all active docs that user is department member
+
+    const isSuperAdmin = req.user.isSuperAdmin;
+
+    // Return active documents for user's department, or all docs for super admin.
+    const docs = await Doc.find({
+      isArchived: false,
+      ...(isSuperAdmin ? {} : { department: { $in: req.user.department } }),
+    })
       .populate("department")
       .populate("docsCategory");
 
@@ -355,6 +362,7 @@ function makeSnippet(text, terms, maxLen = 200) {
 }
 
 export async function getDocsSearch(req, res, next) {
+  // Return department documents that user is part of, plus all public documents.
   try {
     const q = (req.query.q || "").trim();
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
@@ -365,7 +373,7 @@ export async function getDocsSearch(req, res, next) {
     const skip = (page - 1) * limit;
 
     if (!q) {
-      return res.status(400).json({ error: "Missing query parameter: q" });
+      return res.status(400).json({ error: "Missing query parameter" });
     }
 
     const projection = {
@@ -377,7 +385,14 @@ export async function getDocsSearch(req, res, next) {
     };
 
     const [results, total] = await Promise.all([
-      Doc.find({ $text: { $search: q } }, projection)
+      Doc.find(
+        {
+          $text: { $search: q },
+          isArchived: false, // Search only return active documents
+          department: { $in: req.user.department }, // Return only documents for which user is member of department
+        },
+        projection
+      )
         .sort({ score: { $meta: "textScore" } })
         .skip(skip)
         .limit(limit),
