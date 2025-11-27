@@ -112,9 +112,12 @@ export async function attachUser(req, res, next) {
     if (!user) {
       return res.status(401).json({ message: "User not authorised." });
     }
+
+    // Ensure user is still active
     if (user.isActive === false) {
       return res.status(403).json({ message: "User is not active." });
     }
+
     req.user = user; // Accessible using req.user.userTableField
     return next();
   } catch (error) {

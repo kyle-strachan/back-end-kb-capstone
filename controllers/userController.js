@@ -82,7 +82,7 @@ export async function registerUser(req, res, next) {
 }
 
 export async function editUser(req, res, next) {
-  debugger;
+  // debugger;
   try {
     const { fullName, location, department, email, position, roles } = req.body;
 

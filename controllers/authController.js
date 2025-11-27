@@ -37,7 +37,7 @@ export async function login(req, res) {
 
     // Test user is active
     if (!user.isActive) {
-      return res.status(403).json({ message: "User does not active." });
+      return res.status(403).json({ message: "User is not active." });
     }
 
     // Test if password matches
