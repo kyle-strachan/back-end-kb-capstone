@@ -119,7 +119,7 @@ export async function logout(req, res) {
 }
 
 export async function resetPassword(req, res) {
-  debugger;
+  // debugger;
   try {
     const { userId, newPassword } = req.body;
     const user = await User.findById(userId);
@@ -140,7 +140,7 @@ export async function resetPassword(req, res) {
 }
 
 export async function changePassword(req, res) {
-  debugger;
+  // debugger;
   try {
     const { newPassword } = req.body;
     const userIdToChange = req.user._id;
