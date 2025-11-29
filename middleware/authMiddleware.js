@@ -73,17 +73,19 @@ export async function authMiddleware(req, res, next) {
     const newAccessToken = signAccessToken(user);
     const newRefreshToken = signRefreshToken(user);
 
+    const isProduction = process.env.NODE_ENV === "production";
+
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none", // Adjust for production
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 15 * 60 * 1000,
     });
 
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none", // Adjust for production
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -128,12 +130,9 @@ export async function attachUser(req, res, next) {
 
 // Authorization - check roles and permissions to verify user can take the action
 export function requirePermission(permission) {
-  console.log(`Running permission check`);
   return (req, res, next) => {
     const isSuperAdmin = req.user.isSuperAdmin;
     if (isSuperAdmin) return next();
-
-    debugger;
     const userRoles = req.user.roles || [];
     const allPermissions = userRoles.flatMap(
       (role) => RolePermissions[role] || []
