@@ -38,8 +38,8 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://cs-capstone-lobby-lock-app-kcur7.ondigitalocean.app/",
-      "https://cs-capstone-lobby-lock-front-end-yyv6j.ondigitalocean.app/",
+      "https://cs-capstone-lobby-lock-app-kcur7.ondigitalocean.app",
+      "https://cs-capstone-lobby-lock-front-end-yyv6j.ondigitalocean.app",
     ],
     credentials: true,
   })
