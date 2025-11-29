@@ -99,7 +99,7 @@ export async function newAccessRequest(req, res, next) {
       }
     });
 
-    debugger;
+    // debugger;
     // Confirm user is active and exists
     const userExists = await User.findOne({ _id: userId, isActive: true });
     if (!userExists) {
