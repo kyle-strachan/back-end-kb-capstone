@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/users.js";
 import { RolePermissions } from "../utils/permissions.js";
+import { cleanUser } from "../utils/cleanUser.js";
 
 export function signAccessToken(user) {
   return jwt.sign(
@@ -127,10 +128,12 @@ export async function attachUser(req, res, next) {
 
 // Authorization - check roles and permissions to verify user can take the action
 export function requirePermission(permission) {
+  console.log(`Running permission check`);
   return (req, res, next) => {
     const isSuperAdmin = req.user.isSuperAdmin;
     if (isSuperAdmin) return next();
 
+    debugger;
     const userRoles = req.user.roles || [];
     const allPermissions = userRoles.flatMap(
       (role) => RolePermissions[role] || []

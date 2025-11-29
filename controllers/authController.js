@@ -3,6 +3,7 @@ import {
   signAccessToken,
   signRefreshToken,
 } from "../middleware/authMiddleware.js";
+import { cleanUser } from "../utils/cleanUser.js";
 
 // Define username and password contraints
 const USERNAME_MIN_LENGTH = 3;
@@ -72,17 +73,12 @@ export async function login(req, res) {
       maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
-    // Only necessary fields returned to front end
+    const uiFlags = { enableDepartments: false };
+
+    // Use helper to return only necessary fields
     return res.status(200).json({
       message: "Login successful.",
-      user: {
-        _id: user._id,
-        fullName: user.fullName,
-        username: user.username,
-        department: user.department,
-        location: user.location,
-        passwordMustChange: user.passwordMustChange,
-      },
+      user: cleanUser(user),
     });
   } catch (error) {
     return res
