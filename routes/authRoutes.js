@@ -5,7 +5,11 @@ import {
   resetPassword,
   changePassword,
 } from "../controllers/authController.js";
-import { authMiddleware, attachUser } from "../middleware/authMiddleware.js";
+import {
+  authMiddleware,
+  attachUser,
+  requirePermission,
+} from "../middleware/authMiddleware.js";
 import { cleanUser } from "../utils/cleanUser.js";
 
 const router = Router();
@@ -15,7 +19,13 @@ const router = Router();
 
 router.post("/login", login); // Public route
 router.post("/logout", authMiddleware, logout);
-router.post("/reset", authMiddleware, attachUser, resetPassword); // Reset by an admin
+router.post(
+  "/reset",
+  authMiddleware,
+  attachUser,
+  requirePermission("users.CanView"),
+  resetPassword
+); // Reset by an admin
 router.patch("/change-password", authMiddleware, attachUser, changePassword); // Changed by user
 router.get("/me", authMiddleware, attachUser, (req, res) => {
   res.json({ user: cleanUser(req.user) });
