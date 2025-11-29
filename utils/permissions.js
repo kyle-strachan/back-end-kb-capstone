@@ -24,5 +24,5 @@ export const RolePermissions = {
     "docs.CanView",
   ],
   Supervisor: ["docs.CanCreate", "docs.CanEdit", "docs.CanView"],
-  User: ["docs.CanViewOwnDepartment"],
+  User: ["docs.CanView"],
 };
