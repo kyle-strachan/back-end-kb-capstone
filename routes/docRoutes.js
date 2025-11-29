@@ -74,7 +74,7 @@ router.post(
   "/",
   authMiddleware,
   attachUser,
-  requirePermission("docs.CanCreate"),
+  requirePermission("docs.CanEdit"),
   newDoc
 ); // Create a new document
 
