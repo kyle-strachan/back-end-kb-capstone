@@ -31,6 +31,7 @@ export async function getDoc(req, res, next) {
     const docId = req.params.id;
     const doc = await Doc.findById(docId)
       .populate("createdBy")
+      .populate("lastModifiedBy")
       .populate("department")
       .populate("docsCategory");
     if (!doc) {
@@ -305,7 +306,7 @@ export async function uploadImage(req, res, next) {
     const signedUrl = await getSignedUrl(
       wasabi,
       new GetObjectCommand({ Bucket, Key }),
-      { expiresIn: 60 * 1 } // 1 minute
+      { expiresIn: 60 * 5 } // 5 minutes
     );
 
     return res.json({
