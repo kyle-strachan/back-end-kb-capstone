@@ -36,7 +36,10 @@ const PORT = process.env.PORT;
 // Keep before routes
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://cs-capstone-lobby-lock-app-kcur7.ondigitalocean.app/",
+    ],
     credentials: true,
   })
 );
