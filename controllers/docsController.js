@@ -43,6 +43,7 @@ export async function getDoc(req, res, next) {
 }
 
 export async function newDoc(req, res, next) {
+  debugger;
   const lastModifiedByUser = req.user.id;
   try {
     const {
