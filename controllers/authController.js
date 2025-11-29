@@ -56,20 +56,22 @@ export async function login(req, res) {
       failedLoginCount: 0,
     });
 
+    const isProduction = process.env.NODE_ENV === "production";
+
     // Create and issue tokens
     const accessToken = signAccessToken(user);
     const refreshToken = signRefreshToken(user);
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none", // Adjust for production
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none", // Adjust for production
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
