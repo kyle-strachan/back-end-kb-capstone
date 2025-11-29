@@ -2,6 +2,7 @@ import ActiveAccessAssignment from "../models/activeAccessAssignments.js";
 import AccessRequest from "../models/accessRequests.js";
 import SystemApplication from "../models/configSystemApplications.js";
 import { isValidObjectId } from "../utils/validation.js";
+import User from "../models/users.js";
 
 export async function getAccessAssignments(req, res, next) {
   // Single route accepts multiple filters
@@ -97,6 +98,15 @@ export async function newAccessRequest(req, res, next) {
           .json({ message: "applicationId is not a valid ObjectId." });
       }
     });
+
+    debugger;
+    // Confirm user is active and exists
+    const userExists = await User.findOne({ _id: userId, isActive: true });
+    if (!userExists) {
+      return res
+        .status(404)
+        .json({ message: "User does not exists or is no longer active." });
+    }
 
     // Track results
     const results = {
