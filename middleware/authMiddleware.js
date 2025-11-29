@@ -76,14 +76,14 @@ export async function authMiddleware(req, res, next) {
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "none", // Adjust for production
       maxAge: 15 * 60 * 1000,
     });
 
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "none", // Adjust for production
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
