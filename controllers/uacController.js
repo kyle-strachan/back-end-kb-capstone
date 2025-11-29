@@ -362,9 +362,22 @@ export async function getToActionAccessRequests(req, res, next) {
       .populate("applicationId", "system")
       .sort({ requestedAt: -1 });
 
-    return res
-      .status(200)
-      .json({ toActionRequests, total: toActionRequests.length });
+    // Count for front-end badges. Perfoming on back-end for not on every re-render on front-end.
+    const toActivateTotal = toActionRequests.filter(
+      (req) => req.requestType === "Activate"
+    ).length;
+
+    const toRevokeTotal = toActionRequests.filter(
+      (req) => req.requestType === "Revoke"
+    ).length;
+
+    return res.status(200).json({
+      toActionRequests,
+      counts: {
+        activate: toActivateTotal,
+        revoke: toRevokeTotal,
+      },
+    });
   } catch (error) {
     console.log(error);
     next(error);
