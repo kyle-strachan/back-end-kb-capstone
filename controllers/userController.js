@@ -18,6 +18,20 @@ export async function getUsers(req, res, next) {
   }
 }
 
+export async function getActiveUsers(req, res, next) {
+  try {
+    const users = await User.find({ isActive: true })
+      .select("-passwordHash")
+      .sort({ fullName: 1 });
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: `No active users found.` });
+    }
+    return res.status(200).json({ users });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function registerUser(req, res, next) {
   try {
     const {

@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   registerUser,
   getUsers,
+  getActiveUsers,
   editUser,
   terminateUser,
 } from "../controllers/userController.js";
@@ -16,13 +17,14 @@ const router = Router();
 // Router controls all user profile access
 // Prefix: /api/users
 
+router.get("/active", authMiddleware, attachUser, getActiveUsers); // View active users - for drop downs - no permission required
 router.get(
   "/",
   authMiddleware,
   attachUser,
   requirePermission("users.CanView"),
   getUsers
-); // View users
+); // View all users
 router.post(
   "/",
   authMiddleware,
