@@ -86,9 +86,8 @@ router.get(
   "/system-applications",
   authMiddleware,
   attachUser,
-  requirePermission("systems.CanManage"),
   getSystemApplications
-); // Get all systems
+); // Get all systems - no permission, populates drop down.
 router.post(
   "/system-applications",
   authMiddleware,
@@ -105,13 +104,7 @@ router.put(
 ); // Edit an existing system
 
 // Config departments
-router.get(
-  "/departments",
-  authMiddleware,
-  attachUser,
-  // requirePermission("departments.CanManage"),
-  getDepartments
-); // Get all departments, no permission required, populates drop down boxes.
+router.get("/departments", authMiddleware, attachUser, getDepartments); // Get all departments, no permission required, populates drop down boxes.
 router.post(
   "/departments",
   authMiddleware,
