@@ -1,10 +1,10 @@
 import Location from "../models/configLocations.js";
-
-const minimumLocationCharacterLength = 3;
+import { MINIMUM_LOCATION_LENGTH } from "../utils/constants.js";
 
 export async function getLocations(req, res, next) {
   try {
-    const locations = await Location.find().sort({ name: 1 });
+    debugger;
+    const locations = await Location.find().sort({ name: 1 }).lean();
     if (!locations || locations.length === 0) {
       return res.status(404).json({ message: `No applications found.` });
     }
@@ -17,6 +17,13 @@ export async function getLocations(req, res, next) {
 export async function newLocation(req, res, next) {
   try {
     const { location } = req.body;
+
+    if (location.trim().length < MINIMUM_LOCATION_LENGTH) {
+      return res
+        .status(400)
+        .json({ message: `Locations must be three characters or more.` });
+    }
+
     await Location.create({
       location,
     });
@@ -49,11 +56,11 @@ export async function editLocations(req, res, next) {
         continue;
       }
       // Check location name is long enough.
-      if (update.location.trim().length < minimumLocationCharacterLength) {
+      if (update.location.trim().length < MINIMUM_LOCATION_LENGTH) {
         results.push({
           id: update._id,
           success: false,
-          message: `Location name must be at least ${minimumLocationCharacterLength} characters`,
+          message: `Location name must be at least ${MINIMUM_LOCATION_LENGTH} characters`,
         });
         continue;
       }
