@@ -384,6 +384,8 @@ export async function getDocsSearch(req, res, next) {
       description: 1,
       body: 1,
       updatedAt: 1,
+      docsCategory: 1,
+      department: 1,
     };
 
     const [results, total] = await Promise.all([
@@ -395,6 +397,8 @@ export async function getDocsSearch(req, res, next) {
         },
         projection
       )
+        .populate("docsCategory", "category")
+        .populate("department", "department")
         .sort({ score: { $meta: "textScore" } })
         .skip(skip)
         .limit(limit),
