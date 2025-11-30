@@ -4,80 +4,57 @@ import {
   signRefreshToken,
 } from "../middleware/authMiddleware.js";
 import { cleanUser } from "../utils/cleanUser.js";
-
-// Define username and password contraints
-const USERNAME_MIN_LENGTH = 3;
-const PASSWORD_MIN_LENGTH = 8;
-const REGEX_USERNAME = /^[a-zA-Z0-9_]+$/;
-const REGEX_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).+$/;
+import {
+  IS_PRODUCTION,
+  COOKIE_BASE_OPTIONS,
+  ACCESS_TOKEN_MAX_AGE,
+  REFRESH_TOKEN_MAX_AGE,
+} from "../utils/constants.js";
 
 export async function login(req, res) {
   try {
-    // Prevent resuming an abandoned session when switching users.
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
+    // Clear cookies
+    res.clearCookie("refreshToken", COOKIE_BASE_OPTIONS);
+    res.clearCookie("accessToken", COOKIE_BASE_OPTIONS);
 
     const { username, password } = req.body;
-
     const trimmedUsername = username.trim().toLowerCase();
     const trimmedPassword = password.trim();
 
-    // Test if user exists
     const user = await User.findOne({ username: trimmedUsername });
     if (!user) {
       return res.status(400).json({ message: "User does not exist." });
     }
 
-    // Test user is active
     if (!user.isActive) {
       return res.status(403).json({ message: "User is not active." });
     }
 
-    // Test if password matches
     const isValidPassword = await user.isValidPassword(trimmedPassword);
     if (!isValidPassword) {
-      // Increment failed login counter
       await User.findByIdAndUpdate(user.id, { $inc: { failedLoginCount: 1 } });
       return res
         .status(401)
         .json({ message: "Invalid login credentials, please try again." });
     }
 
-    // Userame and password validation successful. Reset failed login count
     await User.findByIdAndUpdate(user._id, {
       failedLoginCount: 0,
     });
 
-    const isProduction = process.env.NODE_ENV === "production";
-
-    // Create and issue tokens
     const accessToken = signAccessToken(user);
     const refreshToken = signRefreshToken(user);
+
     res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      ...COOKIE_BASE_OPTIONS,
+      maxAge: REFRESH_TOKEN_MAX_AGE,
     });
 
     res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      ...COOKIE_BASE_OPTIONS,
+      maxAge: ACCESS_TOKEN_MAX_AGE,
     });
 
-    const uiFlags = { enableDepartments: false };
-
-    // Use helper to return only necessary fields
     return res.status(200).json({
       message: "Login successful.",
       user: cleanUser(user),
@@ -98,17 +75,9 @@ export async function logout(req, res) {
     // Increment tokenVersion to invalidate all existing refresh tokens
     await User.findByIdAndUpdate(req.userId, { $inc: { tokenVersion: 1 } });
 
-    // Remove both token if logout is forced
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
+    // Clear cookies
+    res.clearCookie("refreshToken", COOKIE_BASE_OPTIONS);
+    res.clearCookie("accessToken", COOKIE_BASE_OPTIONS);
 
     return res.status(200).json({ message: "Logged out successfully." });
   } catch (error) {
@@ -117,7 +86,6 @@ export async function logout(req, res) {
 }
 
 export async function resetPassword(req, res) {
-  // debugger;
   try {
     const { userId, newPassword } = req.body;
     const user = await User.findById(userId);
@@ -126,7 +94,6 @@ export async function resetPassword(req, res) {
     }
 
     user.passwordMustChange = true;
-    // user.passwordHash = await user.hashPassword(newPassword);
     user.passwordHash = newPassword; // hashing moved to model
     user.tokenVersion += 1;
     await user.save();
@@ -138,7 +105,6 @@ export async function resetPassword(req, res) {
 }
 
 export async function changePassword(req, res) {
-  // debugger;
   try {
     const { newPassword } = req.body;
     const userIdToChange = req.user._id;
