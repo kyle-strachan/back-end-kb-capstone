@@ -4,11 +4,17 @@ import { isValidObjectId, validateObjectIdArray } from "../utils/validation.js";
 
 export async function getSystemApplications(req, res, next) {
   try {
-    const systemApplications = await SystemApplication.find().sort({
+    const query = {};
+
+    if (req.query.active === "true") {
+      query.isActive = true;
+    }
+
+    const systemApplications = await SystemApplication.find(query).sort({
       system: 1,
     });
     const systemCategories = await SystemCategory.find().sort({ name: 1 });
-    // Reject is either are incomplete or empty.
+    // Reject if either are incomplete or empty.
     if (
       !systemApplications ||
       systemApplications.length === 0 ||
