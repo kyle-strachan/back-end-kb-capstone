@@ -6,6 +6,7 @@ export const USERNAME_MIN_LENGTH = 3;
 export const PASSWORD_MIN_LENGTH = 8;
 export const REGEX_USERNAME = /^[a-zA-Z0-9_]+$/;
 export const REGEX_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).+$/; // For submission, password complexity has been left light, use 12345678 if required.
+export const MINIMUM_LOCATION_LENGTH = 3;
 
 // Cookies
 export const COOKIE_BASE_OPTIONS = {
