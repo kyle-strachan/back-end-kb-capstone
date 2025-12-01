@@ -3,7 +3,6 @@ import { MINIMUM_LOCATION_LENGTH } from "../utils/constants.js";
 
 export async function getLocations(req, res, next) {
   try {
-    debugger;
     const locations = await Location.find().sort({ name: 1 }).lean();
     if (!locations || locations.length === 0) {
       return res.status(404).json({ message: `No applications found.` });

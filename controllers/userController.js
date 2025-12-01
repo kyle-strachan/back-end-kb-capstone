@@ -85,7 +85,6 @@ export async function registerUser(req, res, next) {
       passwordHash: password,
       roles,
     });
-    // debugger;
     return res.status(200).json({
       message: `${username} successfully created.`,
       newId: newUser.id,
@@ -96,7 +95,6 @@ export async function registerUser(req, res, next) {
 }
 
 export async function editUser(req, res, next) {
-  // debugger;
   try {
     const { fullName, location, department, email, position, roles } = req.body;
 

@@ -52,10 +52,10 @@ app.use(express.json());
 // app.use(rateLimitMiddleware);  // Implement later
 
 // Router config with temporary logger
-app.use((req, res, next) => {
-  console.log(`Incoming: ${req.method} ${req.url}`);
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log(`Incoming: ${req.method} ${req.url}`);
+//   next();
+// });
 
 // Config routes
 app.use("/api/auth", authRoutes);
@@ -78,7 +78,7 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`Server is running on http://localhost:${PORT}`);
+      console.log(`Server is running...`);
     });
   })
   .catch((error) => {

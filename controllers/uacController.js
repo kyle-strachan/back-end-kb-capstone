@@ -7,7 +7,6 @@ import User from "../models/users.js";
 export async function getAccessAssignments(req, res, next) {
   // Single route accepts multiple filters
   try {
-    // debugger;
     const { userId, applicationId } = req.query;
 
     const filter = {};
@@ -99,7 +98,6 @@ export async function newAccessRequest(req, res, next) {
       }
     });
 
-    // debugger;
     // Confirm user is active and exists
     const userExists = await User.findOne({ _id: userId, isActive: true });
     if (!userExists) {
@@ -389,7 +387,6 @@ export async function getToActionAccessRequests(req, res, next) {
       },
     });
   } catch (error) {
-    console.log(error);
     next(error);
   }
 }
