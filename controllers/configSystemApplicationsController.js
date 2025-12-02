@@ -1,11 +1,17 @@
 import SystemApplication from "../models/configSystemApplications.js";
 import SystemCategory from "../models/configSystemCategories.js";
 import { isValidObjectId, validateObjectIdArray } from "../utils/validation.js";
+import {
+  MINIMUM_SYSTEM_LENGTH,
+  MINIMUM_SYSTEM_ADMINS,
+} from "../utils/constants.js";
 
 export async function getSystemApplications(req, res, next) {
   try {
     const query = {};
 
+    // Create optional isActive filter, config screen will show all,
+    // drop down boxes will show only active.
     if (req.query.active === "true") {
       query.isActive = true;
     }
@@ -16,9 +22,10 @@ export async function getSystemApplications(req, res, next) {
       })
       .lean();
     const systemCategories = await SystemCategory.find()
-      .sort({ name: 1 })
+      .sort({ category: 1 })
       .lean();
-    // Reject if either are incomplete or empty.
+
+    // Reject if either are incomplete or empty
     if (
       !systemApplications ||
       systemApplications.length === 0 ||
@@ -40,33 +47,53 @@ export async function newSystemApplication(req, res, next) {
     const { system, category, isActive, adminUser, sendEmail, description } =
       req.body;
 
-    if (!system || !system.trim()) {
-      return res.status(400).json({ message: "Application name is required." });
+    if (typeof system !== "string") {
+      return res.status(400).json({ message: "Invalid system name." });
     }
+
+    const trimmedSystem = system?.trim();
+
+    // Validate inputs
+    if (!trimmedSystem || trimmedSystem.length < MINIMUM_SYSTEM_LENGTH) {
+      return res.status(400).json({
+        message: `A new system must have at least ${MINIMUM_SYSTEM_LENGTH} characters.`,
+      });
+    }
+
+    // Description may be blank
+    const trimmedDescription = description?.trim();
 
     if (!isValidObjectId(category)) {
-      return res.status(400).json({ message: "Category is required." });
+      return res.status(400).json({ message: "Category ID is invalid." });
     }
 
-    const minimumAdminUser = 0;
+    // Check that all admins are valid
     const adminUserError = validateObjectIdArray(
       adminUser,
       "AdminUser",
-      minimumAdminUser
+      MINIMUM_SYSTEM_ADMINS
     );
+
     if (adminUserError) {
       return res.status(400).json({ message: `${adminUserError}` });
     }
 
+    // Insert new system
     await SystemApplication.create({
-      system,
+      system: trimmedSystem,
       category,
-      isActive,
+      ...(isActive !== undefined && {
+        isActive: Boolean(
+          isActive === true || isActive === "true" // Ensure isActive is true boolean
+        ),
+      }),
       adminUser,
-      sendEmail,
-      description,
+      sendEmail: Boolean(sendEmail === true || sendEmail === "true"),
+      description: trimmedDescription,
     });
-    return res.status(201).json({ message: `${system} successfully created.` });
+    return res
+      .status(201)
+      .json({ message: `${trimmedSystem} created successfully.` });
   } catch (error) {
     next(error);
   }
@@ -77,29 +104,55 @@ export async function editSystemApplication(req, res, next) {
     const { system, category, isActive, adminUser, sendEmail, description } =
       req.body;
 
-    if (!system || !system.trim()) {
-      return res.status(400).json({ message: "Application name is required." });
+    if (typeof system !== "string") {
+      return res.status(400).json({ message: "Invalid system name." });
     }
+
+    const trimmedSystem = system?.trim();
+
+    // Validate inputs
+    if (!trimmedSystem || trimmedSystem.length < MINIMUM_SYSTEM_LENGTH) {
+      return res.status(400).json({
+        message: `System name must have at least ${MINIMUM_SYSTEM_LENGTH} characters.`,
+      });
+    }
+
+    // Description may be blank
+    const trimmedDescription = description?.trim();
 
     if (!isValidObjectId(category)) {
-      return res
-        .status(400)
-        .json({ message: "Valid Category ID is required." });
+      return res.status(400).json({ message: "Category ID is invalid." });
     }
 
-    const minimumAdminUser = 0;
+    // Check that all admins are valid
     const adminUserError = validateObjectIdArray(
       adminUser,
       "AdminUser",
-      minimumAdminUser
+      MINIMUM_SYSTEM_ADMINS
     );
+
     if (adminUserError) {
       return res.status(400).json({ message: `${adminUserError}` });
     }
 
     const modifiedSystem = await SystemApplication.findByIdAndUpdate(
       req.params.id,
-      { system, category, isActive, adminUser, sendEmail, description },
+      {
+        system: trimmedSystem,
+        category,
+        ...(isActive !== undefined && {
+          isActive: Boolean(
+            isActive === true || isActive === "true" // Ensure isActive is true boolean
+          ),
+        }),
+        adminUser,
+        ...(sendEmail !== undefined && {
+          sendEmail: Boolean(
+            sendEmail === true || sendEmail === "true" // Ensure sendEmail is true boolean
+          ),
+        }),
+        description: trimmedDescription,
+      },
       { runValidators: true, new: true }
     );
 
