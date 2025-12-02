@@ -5,11 +5,11 @@ import {
   getDoc,
   newDoc,
   editDoc,
-  getDocsTree,
   uploadImage,
   signUrl,
   getDocsSearch,
 } from "../controllers/docsController.js";
+import { getDocsTree } from "../controllers/docsTreeController.js";
 import {
   authMiddleware,
   attachUser,
