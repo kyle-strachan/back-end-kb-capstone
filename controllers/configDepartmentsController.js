@@ -52,16 +52,16 @@ export async function editDepartments(req, res, next) {
       return res.status(400).json({ message: "No updates provided." });
     }
 
-    // Create array for results, allows multiple edits in one go.
+    // Create array for results, allows multiple edits in one api call.
     const results = [];
 
-    // Validate batch promises
+    // Validate batch changes
     for (const update of updates) {
       // Check department is string
       const department =
         typeof update.department === "string" ? update.department.trim() : "";
 
-      // Check id and deparment exists
+      // Check id and department value
       if (!update._id || !isValidObjectId(update._id) || !department) {
         results.push({
           id: update._id,
@@ -82,14 +82,13 @@ export async function editDepartments(req, res, next) {
       }
 
       try {
-        // Ensure isActive is true boolean
         const result = await Department.findByIdAndUpdate(
           update._id,
           {
             department,
             ...(update.isActive !== undefined && {
               isActive: Boolean(
-                update.isActive === true || update.isActive === "true"
+                update.isActive === true || update.isActive === "true" // Ensure isActive is true boolean
               ),
             }),
           },
