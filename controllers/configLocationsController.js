@@ -1,11 +1,12 @@
 import Location from "../models/configLocations.js";
 import { MINIMUM_LOCATION_LENGTH } from "../utils/constants.js";
+import { isValidObjectId } from "../utils/validation.js";
 
 export async function getLocations(req, res, next) {
   try {
-    const locations = await Location.find().sort({ name: 1 }).lean();
+    const locations = await Location.find().sort({ location: 1 }).lean();
     if (!locations || locations.length === 0) {
-      return res.status(404).json({ message: `No applications found.` });
+      return res.status(404).json({ message: `No locations found.` });
     }
     return res.status(200).json({ locations });
   } catch (error) {
@@ -16,19 +17,25 @@ export async function getLocations(req, res, next) {
 export async function newLocation(req, res, next) {
   try {
     const { location } = req.body;
+    if (typeof location !== "string") {
+      return res.status(400).json({ message: "Invalid location name." });
+    }
+    const trimmedLocation = location?.trim();
 
-    if (location.trim().length < MINIMUM_LOCATION_LENGTH) {
-      return res
-        .status(400)
-        .json({ message: `Locations must be three characters or more.` });
+    // Validate inputs
+    if (!trimmedLocation || trimmedLocation.length < MINIMUM_LOCATION_LENGTH) {
+      return res.status(400).json({
+        message: `A new location must have at least ${MINIMUM_LOCATION_LENGTH} characters.`,
+      });
     }
 
+    // Insert new location
     await Location.create({
-      location,
+      location: trimmedLocation,
     });
     return res
       .status(200)
-      .json({ message: `${location} successfully created.` });
+      .json({ message: `${trimmedLocation} successfully created.` });
   } catch (error) {
     next(error);
   }
@@ -42,11 +49,17 @@ export async function editLocations(req, res, next) {
       return res.status(400).json({ message: "No updates provided." });
     }
 
+    // Create array for results, allows multiple edits in one api call.
     const results = [];
 
     // Validate batch promises
     for (const update of updates) {
-      if (!update._id || typeof update.location !== "string") {
+      // Check location is string
+      const location =
+        typeof update.location === "string" ? update.location.trim() : "";
+
+      // Check id and location value
+      if (!update._id || !isValidObjectId(update._id) || !location) {
         results.push({
           id: update._id,
           success: false,
@@ -54,8 +67,9 @@ export async function editLocations(req, res, next) {
         });
         continue;
       }
-      // Check location name is long enough.
-      if (update.location.trim().length < MINIMUM_LOCATION_LENGTH) {
+
+      // Check location length, update results table if failed
+      if (location.length < MINIMUM_LOCATION_LENGTH) {
         results.push({
           id: update._id,
           success: false,
@@ -68,19 +82,27 @@ export async function editLocations(req, res, next) {
         const result = await Location.findByIdAndUpdate(
           update._id,
           {
-            location: update.location.trim(),
-            isActive: !!update.isActive, // in case field is not changed and is null
+            location,
+            ...(update.isActive !== undefined && {
+              isActive: Boolean(
+                update.isActive === true || update.isActive === "true" // Ensure isActive is true boolean
+              ),
+            }),
           },
-          { runValidators: true, new: true, strict: "throw" }
+          { runValidators: true, new: true, strict: "throw" } // Force reject extra fields
         );
+
+        // If no found location, update results table with failure
         if (!result) {
           results.push({
             id: update._id,
             success: false,
             message: `No matching location ID found.`,
           });
-          return;
+          continue;
         }
+
+        // Success, update results table
         results.push({ id: update._id, success: true });
       } catch (error) {
         results.push({
@@ -92,7 +114,7 @@ export async function editLocations(req, res, next) {
     }
 
     res.status(200).json({
-      message: "Batch processed.",
+      message: "Updates processed.",
       results,
     });
   } catch (error) {
