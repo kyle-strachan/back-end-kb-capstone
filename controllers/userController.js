@@ -3,6 +3,11 @@ import SystemApplication from "../models/configSystemApplications.js";
 import { isValidObjectId, validateObjectIdArray } from "../utils/validation.js";
 import { processRevocations } from "./uacController.js";
 import ActiveAccessAssignment from "../models/activeAccessAssignments.js";
+import {
+  USERNAME_MIN_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  MINIMUM_DEPARTMENTS,
+} from "../utils/constants.js";
 
 export async function getUsers(req, res, next) {
   try {
@@ -47,25 +52,53 @@ export async function registerUser(req, res, next) {
       roles,
     } = req.body;
 
-    if (!fullName || !fullName.trim()) {
+    // Validate inputs
+    if (
+      typeof username !== "string" ||
+      username.trim().length < USERNAME_MIN_LENGTH
+    ) {
+      return res.status(400).json({
+        message: `Username must have at least ${USERNAME_MIN_LENGTH} characters.`,
+      });
+    }
+
+    if (typeof fullName !== "string" || !fullName.trim()) {
       return res.status(400).json({ message: "Full name is required." });
     }
 
-    if (!position || !position.trim()) {
+    if (typeof position !== "string" || !position.trim()) {
       return res.status(400).json({ message: "Position is required." });
     }
 
-    if (!location || !location.trim()) {
+    if (typeof location !== "string" || !location.trim()) {
       return res.status(400).json({ message: "Location is required." });
     }
 
-    // A user is permitted to have zero roles (e.g. external supplier)
+    // Validate email
+    if (typeof email !== "string" || !email.trim()) {
+      return res.status(400).json({ message: "Email is required." });
+    }
 
-    const minimumDepartments = 1;
+    // Validate password
+    if (typeof password !== "string" || password.length < PASSWORD_MIN_LENGTH) {
+      return res.status(400).json({
+        message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`,
+      });
+    }
+
+    // A user is permitted to have zero roles (e.g. external supplier), empty array acceptable.
+    if (roles && !Array.isArray(roles)) {
+      return res.status(400).json({ message: "Roles must be an array." });
+    }
+
+    if (!department) {
+      return res.status(400).json({ message: "Department is required." });
+    }
+
     const departmentError = validateObjectIdArray(
       department,
       "Department",
-      minimumDepartments
+      MINIMUM_DEPARTMENTS
     );
     if (departmentError)
       return res.status(400).json({ message: `${departmentError}` });
@@ -98,48 +131,61 @@ export async function registerUser(req, res, next) {
 
 export async function editUser(req, res, next) {
   try {
+    const userId = req.params.id;
+
+    // Validate inputs
+    if (!isValidObjectId(userId)) {
+      return res.status(400).json({ message: "Invalid user ID." });
+    }
+
     const { fullName, location, department, email, position, roles } = req.body;
 
-    if (!fullName || !fullName.trim()) {
+    if (typeof fullName !== "string" || !fullName.trim()) {
       return res.status(400).json({ message: "Full name is required." });
     }
 
-    if (!position || !position.trim()) {
+    if (typeof position !== "string" || !position.trim()) {
       return res.status(400).json({ message: "Position is required." });
     }
 
-    if (!location || !location.trim()) {
+    if (typeof location !== "string" || !location.trim()) {
       return res.status(400).json({ message: "Location is required." });
     }
 
-    // A user is permitted to have zero roles (e.g. external supplier)
+    if (typeof email !== "string" || !email.trim()) {
+      return res.status(400).json({ message: "Email is required." });
+    }
 
-    const minimumDepartments = 1;
+    // A user is permitted to have zero roles (e.g. external supplier). Unit test this.
+    if (roles && !Array.isArray(roles)) {
+      return res.status(400).json({ message: "Roles must be an array." });
+    }
+
     const departmentError = validateObjectIdArray(
       department,
       "Department",
-      minimumDepartments
+      MINIMUM_DEPARTMENTS
     );
     if (departmentError) {
       return res.status(400).json({ message: `${departmentError}` });
     }
 
     const editUser = await User.findByIdAndUpdate(
-      req.params.id,
+      userId,
       {
-        fullName,
-        location,
+        fullName: fullName.trim(),
+        location: location.trim(),
         department,
-        email,
-        position,
+        email: email.toLowerCase().trim(),
+        position: position.trim(),
         roles,
-        isActive: true, // Force for all saves - allows reactivate to work.
+        isActive: true,
       },
       { runValidators: true, new: true }
     );
 
     if (!editUser) {
-      res.status(400).json({ message: "User not found." });
+      return res.status(400).json({ message: "User not found." });
     }
 
     return res
@@ -172,6 +218,11 @@ export async function terminateUser(req, res, next) {
     const user = await User.findById(userId);
     if (!user) {
       return res.status(400).json({ message: `UserId does not exist` });
+    }
+
+    // Confirm user is currently active.
+    if (!user.isActive) {
+      return res.status(400).json({ message: "User is already inactive." });
     }
 
     // Get all active access assignments for user
