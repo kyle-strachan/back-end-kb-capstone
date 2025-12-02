@@ -7,13 +7,16 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import createDOMPurify from "dompurify";
 import { JSDOM } from "jsdom";
-
-// TO DO: USER FIELD AND AT FIELDS MUST BE POPULATED
+import {
+  MINIMUM_DOC_BODY_LENGTH,
+  MINIMUM_DOC_TITLE_LENGTH,
+  MINIMUM_DOC_DESCRIPTION_LENGTH,
+} from "../utils/constants.js";
 
 export async function getDocs(req, res, next) {
   try {
     const docs = await Doc.find()
-      .sort({ name: 1 })
+      .sort({ title: 1 })
       .populate("createdBy")
       .populate("department", "department")
       .populate("docsCategory", "category")
@@ -30,6 +33,11 @@ export async function getDocs(req, res, next) {
 export async function getDoc(req, res, next) {
   try {
     const docId = req.params.id;
+
+    if (!isValidObjectId(docId)) {
+      return res.status(400).json({ message: "Invalid document ID." });
+    }
+
     const doc = await Doc.findById(docId)
       .populate("createdBy")
       .populate("lastModifiedBy")
@@ -59,21 +67,30 @@ export async function newDoc(req, res, next) {
     } = req.body;
 
     // Validate inputs
-    if (!title || title.length < 3) {
-      return res
-        .status(400)
-        .json({ message: `A title must have at least three characters.` });
-    }
-
-    if (!description || description.length < 3) {
+    if (
+      typeof title !== "string" ||
+      title.trim().length < MINIMUM_DOC_TITLE_LENGTH
+    ) {
       return res.status(400).json({
-        message: `A description must have at least three characters.`,
+        message: `A title must have at least ${MINIMUM_DOC_TITLE_LENGTH} characters.`,
       });
     }
 
-    if (!body || body.length < 3) {
+    if (
+      typeof description !== "string" ||
+      description.trim().length < MINIMUM_DOC_DESCRIPTION_LENGTH
+    ) {
       return res.status(400).json({
-        message: `A document body must have at least three characters.`,
+        message: `A description must have at least ${MINIMUM_DOC_DESCRIPTION_LENGTH} characters.`,
+      });
+    }
+
+    if (
+      typeof body !== "string" ||
+      body.trim().length < MINIMUM_DOC_BODY_LENGTH
+    ) {
+      return res.status(400).json({
+        message: `A document body must have at least ${MINIMUM_DOC_BODY_LENGTH} characters.`,
       });
     }
 
@@ -97,9 +114,9 @@ export async function newDoc(req, res, next) {
       lastModifiedBy: lastModifiedByUser,
       lastModifiedAt: new Date(), // model requires this
       department,
-      isPublic,
-      docsCategory: docsCategory,
-      isArchived,
+      isPublic: Boolean(isPublic === true || isPublic === "true"),
+      docsCategory,
+      isArchived: Boolean(isArchived === true || isArchived === "true"),
     });
 
     if (!doc) {
@@ -131,21 +148,30 @@ export async function editDoc(req, res, next) {
     } = req.body;
 
     // Validate inputs
-    if (!title || title.length < 3) {
-      return res
-        .status(400)
-        .json({ message: `A title must have at least three characters.` });
-    }
-
-    if (!description || description.length < 3) {
+    if (
+      typeof title !== "string" ||
+      title.trim().length < MINIMUM_DOC_TITLE_LENGTH
+    ) {
       return res.status(400).json({
-        message: `A description must have at least three characters.`,
+        message: `A title must have at least ${MINIMUM_DOC_TITLE_LENGTH} characters.`,
       });
     }
 
-    if (!body || body.length < 3) {
+    if (
+      typeof description !== "string" ||
+      description.trim().length < MINIMUM_DOC_DESCRIPTION_LENGTH
+    ) {
       return res.status(400).json({
-        message: `A document body must have at least three characters.`,
+        message: `A description must have at least ${MINIMUM_DOC_DESCRIPTION_LENGTH} characters.`,
+      });
+    }
+
+    if (
+      typeof body !== "string" ||
+      body.trim().length < MINIMUM_DOC_BODY_LENGTH
+    ) {
+      return res.status(400).json({
+        message: `A document body must have at least ${MINIMUM_DOC_BODY_LENGTH} characters.`,
       });
     }
 
@@ -162,6 +188,10 @@ export async function editDoc(req, res, next) {
     }
 
     const docId = req.params.id;
+    if (!isValidObjectId(docId)) {
+      return res.status(400).json({ message: "Invalid document ID." });
+    }
+
     const updatedDoc = await Doc.findByIdAndUpdate(
       docId,
       {
@@ -188,97 +218,19 @@ export async function editDoc(req, res, next) {
   }
 }
 
-export async function getDocsTree(req, res, next) {
-  try {
-    // superAdmins can view all documents, regardless of department ownership
-    const isSuperAdmin = req.user.isSuperAdmin;
-
-    // Tree only shows arctive (not archived documents)
-    let query = { isArchived: false };
-
-    if (!isSuperAdmin) {
-      // Normal users, can only see documents with their department ownership plus all 'public' documents
-      // A public document is one shared regardless of user's department.
-      query.$or = [
-        { isPublic: true },
-        { department: { $in: req.user.department } },
-      ];
-    }
-
-    const docs = await Doc.find(query)
-      .populate("department")
-      .populate("docsCategory")
-      .lean();
-
-    const departmentMap = {};
-
-    // Loop through each doc and push into tree. If it doesn't exist, create it.
-    for (const doc of docs) {
-      const department = doc.department;
-      if (!department) continue; // in case it's missing in the database, skip.
-
-      const depId = String(department._id);
-      const depName = department.department;
-
-      // Check whether department exists in map
-      if (!departmentMap[depId]) {
-        departmentMap[depId] = {
-          id: depId,
-          label: depName,
-          children: [], // categories will be inserted here
-        };
-      }
-
-      const depNode = departmentMap[depId];
-
-      // Get category
-      const category = doc.docsCategory;
-      const catId = category ? String(category._id) : "0"; // Should never happen — remove later.
-      const catLabel = category ? category.category : "Uncategorised";
-
-      // Check if category id already exists in the department
-      let catNode = depNode.children.find((c) => c.id === catId);
-
-      if (!catNode) {
-        catNode = {
-          id: catId,
-          label: catLabel,
-          children: [], // Will contain individual docs
-        };
-        depNode.children.push(catNode); // insert catNode if not present
-      }
-
-      // Push the document into the map
-      catNode.children.push({
-        id: String(doc._id),
-        label: doc.title,
-        fileType: "doc", // Hard-coding all docs as file icons for now
-      });
-    }
-
-    let items = Object.values(departmentMap);
-
-    // Sort by departments
-    items.sort((a, b) => a.label.localeCompare(b.label));
-
-    // Sort by categories and documents
-    for (const dep of items) {
-      dep.children.sort((a, b) => a.label.localeCompare(b.label)); // categories
-
-      for (const cat of dep.children) {
-        cat.children.sort((a, b) => a.label.localeCompare(b.label)); // documents
-      }
-    }
-
-    return res.status(200).json({ items });
-  } catch (error) {
-    next(error);
-  }
-}
-
 export async function uploadImage(req, res, next) {
   try {
     const docId = req.params.id;
+
+    if (!isValidObjectId(docId)) {
+      return res.status(400).json({ message: "Invalid document ID." });
+    }
+
+    // Ensure document exists
+    const docExists = await Doc.exists({ _id: docId });
+    if (!docExists) {
+      return res.status(404).json({ message: "Document does not exist." });
+    }
 
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
@@ -288,9 +240,9 @@ export async function uploadImage(req, res, next) {
     const processedImageBuffer = await sharp(req.file.buffer)
       .resize({
         width: 1000,
-        withoutEnlargement: true, // <-- prevents upscaling
+        withoutEnlargement: true, // Prevent increasing image size to maximum width
       })
-      .webp({ quality: 80 })
+      .webp({ quality: 80 }) // Compressing to match web guidelines for company site
       .toBuffer();
 
     // Create filename
@@ -330,46 +282,60 @@ export async function uploadImage(req, res, next) {
 
 export async function signUrl(req, res, next) {
   try {
-    const { key } = req.query; // e.g. "documents/6921.../12345.webp"
+    const { key } = req.query;
     const Bucket = process.env.WASABI_BUCKET;
 
+    // Check key format
+    if (typeof key !== "string") {
+      return res.status(400).json({ message: "Invalid key format." });
+    }
+
+    // Verify expected prefix
+    if (!key.startsWith("documents/")) {
+      return res.status(400).json({ message: "Invalid key path." });
+    }
+
+    // Get docId
+    const parts = key.split("/");
+    const docId = parts[1];
+
+    if (!isValidObjectId(docId)) {
+      return res.status(400).json({ message: "Invalid document ID in key." });
+    }
+
+    // Confirm docId exists
+    const doc = await Doc.findById(docId);
+    if (!doc) {
+      return res.status(404).json({ message: "Document not found." });
+    }
+
+    // Confirm user can view this document, prevents images security leak between departments
+    const isSuperAdmin = req.user?.isSuperAdmin;
+    const userDepartments = req.user?.department || [];
+
+    const isAuthorised =
+      isSuperAdmin ||
+      doc.isPublic ||
+      userDepartments.some((d) => String(d) === String(doc.department));
+
+    if (!isAuthorised) {
+      return res
+        .status(403)
+        .json({ message: "You are not permitted to view this document." });
+    }
+
+    // Generate secure signed URL
     const signedUrl = await getSignedUrl(
       wasabi,
       new GetObjectCommand({ Bucket, Key: key }),
-      { expiresIn: 60 } // valid for 60 seconds (adjust as needed)
+      { expiresIn: 60 }
     );
 
-    res.json({ url: signedUrl });
+    return res.json({ url: signedUrl });
   } catch (error) {
     console.error("Failed to sign URL:", error);
     next(error);
   }
-}
-
-// Helper to generate a snippet around the first matched term
-function makeSnippet(text, terms, maxLen = 200) {
-  if (!text) return "";
-  const normalized = text.toLowerCase();
-  let idx = -1;
-
-  for (const t of terms) {
-    const i = normalized.indexOf(t.toLowerCase());
-    if (i !== -1) {
-      idx = i;
-      break;
-    }
-  }
-
-  if (idx === -1) {
-    // fallback: just return the start of the text
-    return text.slice(0, maxLen) + (text.length > maxLen ? "…" : "");
-  }
-
-  const start = Math.max(0, idx - Math.floor(maxLen / 3));
-  const snippet = text.slice(start, start + maxLen);
-  return (
-    (start > 0 ? "…" : "") + snippet + (start + maxLen < text.length ? "…" : "")
-  );
 }
 
 export async function getDocsSearch(req, res, next) {
@@ -401,6 +367,12 @@ export async function getDocsSearch(req, res, next) {
 
     const isSuperAdmin = req.user.isSuperAdmin;
 
+    if (!Array.isArray(req.user.department)) {
+      return res
+        .status(400)
+        .json({ message: "User department list is not an array." });
+    }
+
     // Base search filter — always require active docs and text match
     let filter = {
       isArchived: false,
@@ -427,21 +399,12 @@ export async function getDocsSearch(req, res, next) {
       Doc.countDocuments(filter),
     ]);
 
-    const terms = q.replace(/"/g, "").split(/\s+/).filter(Boolean);
-
-    const resultsWithSnippets = results.map((r) => ({
-      ...r.toObject(),
-      snippet: cleanSnippet(
-        makeSnippet(r.body || r.description || r.title, terms)
-      ),
-    }));
-
     res.json({
       query: q,
       page,
       limit,
       total,
-      results: resultsWithSnippets,
+      results,
     });
   } catch (error) {
     next(error);
@@ -450,11 +413,3 @@ export async function getDocsSearch(req, res, next) {
 
 const window = new JSDOM("").window;
 const DOMPurify = createDOMPurify(window);
-
-function cleanSnippet(snippet) {
-  const normalized = snippet.replace(/&nbsp;/g, " ");
-  return DOMPurify.sanitize(normalized, {
-    ALLOWED_TAGS: ["b", "i", "em", "strong", "span"],
-    ALLOWED_ATTR: [],
-  });
-}
