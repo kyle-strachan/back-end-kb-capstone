@@ -9,6 +9,7 @@ import {
   COOKIE_BASE_OPTIONS,
   ACCESS_TOKEN_MAX_AGE,
   REFRESH_TOKEN_MAX_AGE,
+  PASSWORD_MIN_LENGTH,
 } from "../utils/constants.js";
 
 export async function login(req, res) {
@@ -18,6 +19,9 @@ export async function login(req, res) {
     res.clearCookie("accessToken", COOKIE_BASE_OPTIONS);
 
     const { username, password } = req.body;
+    if (typeof username !== "string" || typeof password !== "string") {
+      return res.status(400).json({ message: "Invalid username or password." });
+    }
     const trimmedUsername = username.trim().toLowerCase();
     const trimmedPassword = password.trim();
 
@@ -88,6 +92,21 @@ export async function logout(req, res) {
 export async function resetPassword(req, res) {
   try {
     const { userId, newPassword } = req.body;
+
+    /// Validate inputs
+    if (!isValidObjectId(userId)) {
+      return res.status(400).json({ message: "Invalid user ID." });
+    }
+
+    if (
+      typeof newPassword !== "string" ||
+      newPassword.trim().length < PASSWORD_MIN_LENGTH
+    ) {
+      return res.status(400).json({
+        message: `New password must be at least ${PASSWORD_MIN_LENGTH} characters.`,
+      });
+    }
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -107,6 +126,15 @@ export async function resetPassword(req, res) {
 export async function changePassword(req, res) {
   try {
     const { newPassword } = req.body;
+    if (
+      typeof newPassword !== "string" ||
+      newPassword.trim().length < PASSWORD_MIN_LENGTH
+    ) {
+      return res.status(400).json({
+        message: `New password must be at least ${PASSWORD_MIN_LENGTH} characters.`,
+      });
+    }
+
     const userIdToChange = req.user._id;
     const user = await User.findById(userIdToChange);
     if (!user) {
