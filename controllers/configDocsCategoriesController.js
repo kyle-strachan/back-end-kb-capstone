@@ -1,21 +1,32 @@
 import DocsCategory from "../models/configDocsCategories.js";
-import { isValidObjectId, validateObjectIdArray } from "../utils/validation.js";
-
-const minimumDocumentCategoryLength = 3;
+import { isValidObjectId } from "../utils/validation.js";
+import { MINIMUM_DEPARTMENT_CATEGORY_LENGTH } from "../utils/constants.js";
 
 export async function getDocsCategories(req, res, next) {
   try {
-    const { user } = req;
     const { departmentId } = req.query;
+
+    // Create optional filter to populate drop down boxes (e.g. New Document drop down).
+    // Leave unfiltered for config screen.
     let filter = {};
     if (departmentId) {
       filter = { departmentId: departmentId };
     }
 
-    const docsCategories = await DocsCategory.find(filter)
+    let docsCategories = await DocsCategory.find(filter)
       .populate("departmentId", "department")
-      .sort({ categoryName: 1 })
       .lean();
+
+    // Sort by populated department name, then category
+    docsCategories.sort((a, b) => {
+      const depA = a.departmentId?.department || "";
+      const depB = b.departmentId?.department || "";
+
+      const depCompare = depA.localeCompare(depB);
+      if (depCompare !== 0) return depCompare;
+
+      return a.category.localeCompare(b.category);
+    });
 
     return res.status(200).json({ docsCategories });
   } catch (error) {
@@ -26,24 +37,31 @@ export async function getDocsCategories(req, res, next) {
 export async function newDocsCategory(req, res, next) {
   try {
     const { departmentId, category } = req.body;
+    if (typeof category !== "string") {
+      return res.status(400).json({ message: "Invalid category name." });
+    }
+    const trimmedCategory = category?.trim();
 
-    const minimumDepartments = 1;
-    const departmentError = validateObjectIdArray(
-      departmentId,
-      "DocsCategory",
-      minimumDepartments
-    );
-    if (departmentError) {
-      return res.status(400).json({ message: `DepartmentId is invalid.` });
+    // Validate inputs
+    if (
+      !trimmedCategory ||
+      trimmedCategory.length < MINIMUM_DEPARTMENT_CATEGORY_LENGTH
+    ) {
+      return res.status(400).json({
+        message: `Department category must be at least ${MINIMUM_DEPARTMENT_CATEGORY_LENGTH} characters.`,
+      });
     }
 
-    if (category.length < 3) {
+    if (!departmentId || !isValidObjectId(departmentId)) {
       return res
         .status(400)
-        .json({ message: `Category must have a minimum of three characters.` });
+        .json({ message: `Department ID is invalid, cannot insert.` });
     }
 
-    const newCategory = await DocsCategory.create({ departmentId, category });
+    const newCategory = await DocsCategory.create({
+      departmentId,
+      category: trimmedCategory,
+    });
     if (!newCategory) {
       return res
         .status(400)
@@ -52,7 +70,7 @@ export async function newDocsCategory(req, res, next) {
 
     return res
       .status(200)
-      .json({ message: `New document category created successfully.` });
+      .json({ message: `${trimmedCategory} created successfully.` });
   } catch (error) {
     next(error);
   }
@@ -66,11 +84,17 @@ export async function editDocsCategory(req, res, next) {
       return res.status(400).json({ message: "No updates provided." });
     }
 
+    // Create array for results, allows multiple edits in one api call.
     const results = [];
 
-    // Validate batch promises
+    // Validate batch changes
     for (const update of updates) {
-      if (!update._id || typeof update.category !== "string") {
+      // Check category is string
+      const category =
+        typeof update.category === "string" ? update.category.trim() : "";
+
+      // Check id and category value
+      if (!update._id || !isValidObjectId(update._id) || !category) {
         results.push({
           id: update._id,
           success: false,
@@ -78,12 +102,13 @@ export async function editDocsCategory(req, res, next) {
         });
         continue;
       }
-      // Check document category name is long enough.
-      if (update.category.trim().length < minimumDocumentCategoryLength) {
+
+      // Check category length, update results table if failed
+      if (category.length < MINIMUM_DEPARTMENT_CATEGORY_LENGTH) {
         results.push({
           id: update._id,
           success: false,
-          message: `Document category name must be at least ${minimumDocumentCategoryLength} characters`,
+          message: `Document category name must be at least ${MINIMUM_DEPARTMENT_CATEGORY_LENGTH} characters`,
         });
         continue;
       }
@@ -92,19 +117,27 @@ export async function editDocsCategory(req, res, next) {
         const result = await DocsCategory.findByIdAndUpdate(
           update._id,
           {
-            category: update.category.trim(),
-            isActive: !!update.isActive, // in case field is not changed and is null
+            category: category,
+            ...(update.isActive !== undefined && {
+              isActive: Boolean(
+                update.isActive === true || update.isActive === "true" // Ensure isActive is true boolean
+              ),
+            }),
           },
-          { runValidators: true, new: true, strict: "throw" }
+          { runValidators: true, new: true, strict: "throw" } // Force rejecting for extra fields
         );
+
+        // If no found category found to update, update results table with failure
         if (!result) {
           results.push({
             id: update._id,
             success: false,
-            message: `No matching document category found.`,
+            message: `No matching document category found to update.`,
           });
           return;
         }
+
+        // Success, update results table
         results.push({ id: update._id, success: true });
       } catch (error) {
         results.push({
@@ -116,7 +149,7 @@ export async function editDocsCategory(req, res, next) {
     }
 
     res.status(200).json({
-      message: "Batch processed.",
+      message: "Updates processed.",
       results,
     });
   } catch (error) {
