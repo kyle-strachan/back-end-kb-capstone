@@ -1,6 +1,6 @@
+import { isValidObjectId } from "../utils/validation.js";
 import Department from "../models/configDepartments.js";
-
-const minimumDepartmentCharacterLength = 3;
+import { MINIMUM_DEPARTMENT_LENGTH } from "../utils/constants.js";
 
 export async function getDepartments(req, res, next) {
   try {
@@ -17,12 +17,28 @@ export async function getDepartments(req, res, next) {
 export async function newDepartment(req, res, next) {
   try {
     const { department } = req.body;
+    if (typeof department !== "string") {
+      return res.status(400).json({ message: "Invalid department name." });
+    }
+    const trimmedDepartment = department?.trim();
+
+    // Validate inputs
+    if (
+      !trimmedDepartment ||
+      trimmedDepartment.length < MINIMUM_DEPARTMENT_LENGTH
+    ) {
+      return res.status(400).json({
+        message: `A new department must have at least ${MINIMUM_DEPARTMENT_LENGTH} characters.`,
+      });
+    }
+
+    // Create new department
     await Department.create({
-      department,
+      department: trimmedDepartment,
     });
     return res
       .status(200)
-      .json({ message: `${department} successfully created.` });
+      .json({ message: `${trimmedDepartment} successfully created.` });
   } catch (error) {
     next(error);
   }
@@ -36,11 +52,17 @@ export async function editDepartments(req, res, next) {
       return res.status(400).json({ message: "No updates provided." });
     }
 
+    // Create array for results, allows multiple edits in one go.
     const results = [];
 
     // Validate batch promises
     for (const update of updates) {
-      if (!update._id || typeof update.department !== "string") {
+      // Check department is string
+      const department =
+        typeof update.department === "string" ? update.department.trim() : "";
+
+      // Check id and deparment exists
+      if (!update._id || !isValidObjectId(update._id) || !department) {
         results.push({
           id: update._id,
           success: false,
@@ -48,33 +70,43 @@ export async function editDepartments(req, res, next) {
         });
         continue;
       }
-      // Check department name is long enough.
-      if (update.department.trim().length < minimumDepartmentCharacterLength) {
+
+      // Check department length, update results table if failed
+      if (department.length < MINIMUM_DEPARTMENT_LENGTH) {
         results.push({
           id: update._id,
           success: false,
-          message: `Department name must be at least ${minimumDepartmentCharacterLength} characters`,
+          message: `Department name must be at least ${MINIMUM_DEPARTMENT_LENGTH} characters.`,
         });
         continue;
       }
 
       try {
+        // Ensure isActive is true boolean
         const result = await Department.findByIdAndUpdate(
           update._id,
           {
-            department: update.department.trim(),
-            isActive: !!update.isActive, // in case field is not changed and is null
+            department,
+            ...(update.isActive !== undefined && {
+              isActive: Boolean(
+                update.isActive === true || update.isActive === "true"
+              ),
+            }),
           },
-          { runValidators: true, new: true, strict: "throw" }
+          { runValidators: true, new: true, strict: "throw" } // Force rejecting for extra fields
         );
+
+        // If no found department, update results table with failure
         if (!result) {
           results.push({
             id: update._id,
             success: false,
-            message: `No matching department ID found.`,
+            message: "No matching department ID found.",
           });
-          return;
+          continue;
         }
+
+        // Success, update results table
         results.push({ id: update._id, success: true });
       } catch (error) {
         results.push({
@@ -86,7 +118,7 @@ export async function editDepartments(req, res, next) {
     }
 
     res.status(200).json({
-      message: "Batch processed.",
+      message: "Updates processed.",
       results,
     });
   } catch (error) {
