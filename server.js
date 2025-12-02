@@ -10,14 +10,12 @@ import uacRoutes from "./routes/uacRoutes.js";
 import errorHandler from "./middleware/errorHandler.js";
 import cors from "cors";
 
-// import { rateLimitMiddleware } // Add later
-
 // Check for environment variable before proceeding
 try {
   if (
-    // !process.env.MONGO_URI ||
-    // !process.env.ACCESS_SECRET ||
-    // !process.env.REFRESH_SECRET ||
+    !process.env.MONGO_URI ||
+    !process.env.ACCESS_SECRET ||
+    !process.env.REFRESH_SECRET ||
     !process.env.PORT
   ) {
     throw new Error(
@@ -32,16 +30,19 @@ try {
 // App init
 const app = express();
 const PORT = process.env.PORT;
-
-// Keep before routes
+const allowedOrigins = process.env.CORS_ORIGINS.split(",");
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://cs-capstone-lobby-lock-app-kcur7.ondigitalocean.app",
-      "https://cs-capstone-lobby-lock-front-end-yyv6j.ondigitalocean.app",
-      "https://lobbylock.kylestrachan.com",
-    ],
+    origin: function (origin, callback) {
+      // Allow server-to-server calls (no origin)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
@@ -49,13 +50,6 @@ app.use(
 // Middleware
 app.use(cookieParser());
 app.use(express.json());
-// app.use(rateLimitMiddleware);  // Implement later
-
-// Router config with temporary logger
-// app.use((req, res, next) => {
-//   console.log(`Incoming: ${req.method} ${req.url}`);
-//   next();
-// });
 
 // Config routes
 app.use("/api/auth", authRoutes);
@@ -78,7 +72,7 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`Server is running...`);
+      console.log(`Server is running.`);
     });
   })
   .catch((error) => {
