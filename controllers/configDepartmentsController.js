@@ -92,7 +92,7 @@ export async function editDepartments(req, res, next) {
               ),
             }),
           },
-          { runValidators: true, new: true, strict: "throw" } // Force rejecting for extra fields
+          { runValidators: true, new: true, strict: "throw" } // Force reject extra fields
         );
 
         // If no found department, update results table with failure
