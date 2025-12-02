@@ -11,8 +11,13 @@ export async function getAccessAssignments(req, res, next) {
 
     const filter = {};
 
-    if (isValidObjectId(userId)) filter.userId = userId;
-    if (isValidObjectId(applicationId)) filter.applicationId = applicationId;
+    // Validate inputs
+    if (typeof userId === "string" && isValidObjectId(userId)) {
+      filter.userId = userId;
+    }
+    if (typeof applicationId === "string" && isValidObjectId(applicationId)) {
+      filter.applicationId = applicationId;
+    }
 
     const assignments = await ActiveAccessAssignment.find(filter)
       .populate("userId")
@@ -46,12 +51,22 @@ export async function getAccessRequests(req, res, next) {
 
     const filter = {};
 
-    if (isValidObjectId(userId)) filter.userId = userId;
     if (requestType) filter.requestType = requestType;
     if (status) filter.status = status;
-    if (isValidObjectId(applicationId)) filter.applicationId = applicationId;
-    if (completedBy) filter.completedBy = completedBy;
-    if (requestedBy) filter.requestedBy = requestedBy;
+
+    // Validate inputs
+    if (typeof userId === "string" && isValidObjectId(userId)) {
+      filter.userId = userId;
+    }
+    if (typeof applicationId === "string" && isValidObjectId(applicationId)) {
+      filter.applicationId = applicationId;
+    }
+    if (typeof completedBy === "string" && isValidObjectId(completedBy)) {
+      filter.completedBy = completedBy;
+    }
+    if (typeof requestedBy === "string" && isValidObjectId(requestedBy)) {
+      filter.requestedBy = requestedBy;
+    }
 
     // Optional date filtering
     if (requestedAfter || requestedBefore) {
@@ -91,14 +106,20 @@ export async function newAccessRequest(req, res, next) {
         .json({ message: "userId is not a valid ObjectId." });
     }
 
-    // Validate front-end app Ids
-    applicationId.forEach((app) => {
-      if (!isValidObjectId(app)) {
+    // Validate front-end app Ids, confirm applicationId is array of ObjectIds
+    if (!Array.isArray(applicationId) || applicationId.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "applicationId must be a non-empty array." });
+    }
+
+    for (const app of applicationId) {
+      if (typeof app !== "string" || !isValidObjectId(app)) {
         return res
           .status(400)
-          .json({ message: "applicationId is not a valid ObjectId." });
+          .json({ message: "applicationId contains an invalid ObjectId." });
       }
-    });
+    }
 
     // Confirm user is active and exists
     const userExists = await User.findOne({ _id: userId, isActive: true });
@@ -189,11 +210,12 @@ export async function approveOrRejectRequest(req, res, next) {
     if (!requestDoc) {
       return res.status(404).json({ message: "Access request not found." });
     }
+
     const applicationId = requestDoc?.applicationId;
-    if (!applicationId) {
-      return res
-        .status(400)
-        .json({ message: "Request ID has invalid system id." });
+
+    // Extra validation, in case application is deleted with pre-existing request
+    if (!isValidObjectId(applicationId)) {
+      return res.status(400).json({ message: "applicationId is invalid." });
     }
 
     // Confirm request can still be actioned.
@@ -276,6 +298,22 @@ export async function createRevokeAccessRequest(req, res, next) {
   try {
     const { ids } = req.body;
     const requestedBy = req.user._id;
+
+    // Validate ids array
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Invalid request array received." });
+    }
+
+    for (const id of ids) {
+      if (typeof id !== "string" || !isValidObjectId(id)) {
+        return res
+          .status(400)
+          .json({ message: "Request contains an invalid ObjectId." });
+      }
+    }
+
     const results = await processRevocations(ids, requestedBy);
 
     return res.status(200).json({
@@ -301,7 +339,8 @@ export async function processRevocations(ids, requestedBy) {
       try {
         // Validate front end ID
         if (!isValidObjectId(requestId)) {
-          results.errors.push(requestId);
+          results.errors.push({ requestId, error: "Invalid ObjectId." });
+          continue;
         }
 
         // Check existing access
@@ -344,7 +383,7 @@ export async function processRevocations(ids, requestedBy) {
 
         results.created.push(newReq);
       } catch (err) {
-        results.errors.push({ appId, error: err.message });
+        results.errors.push({ requestId, error: err.message });
       }
     }
     return results;
@@ -363,6 +402,14 @@ export async function getToActionAccessRequests(req, res, next) {
       .lean();
 
     const systemIds = adminSystems.map((s) => s._id);
+
+    // If a user is not an admin of any system, return zero requests
+    if (!Array.isArray(systemIds) || systemIds.length === 0) {
+      return res.status(200).json({
+        toActionRequests: [],
+        counts: { activate: 0, revoke: 0 },
+      });
+    }
 
     const toActionRequests = await AccessRequest.find({
       applicationId: { $in: systemIds },
@@ -399,7 +446,14 @@ export async function getToActionAccessRequests(req, res, next) {
 export async function confirmRevocation(req, res, next) {
   try {
     // Confirm pending revocation exists
+    if (!isValidObjectId(req.params.id)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid revocation request ID." });
+    }
+
     const accessRequest = await AccessRequest.findById(req.params.id);
+
     if (!accessRequest) {
       return res
         .status(400)
