@@ -16,7 +16,8 @@ export async function getDocs(req, res, next) {
       .sort({ name: 1 })
       .populate("createdBy")
       .populate("department", "department")
-      .populate("docsCategory", "category");
+      .populate("docsCategory", "category")
+      .lean();
     if (docs.length === 0) {
       return res.status(404).json({ message: `No documents found.` });
     }
@@ -33,7 +34,8 @@ export async function getDoc(req, res, next) {
       .populate("createdBy")
       .populate("lastModifiedBy")
       .populate("department")
-      .populate("docsCategory");
+      .populate("docsCategory")
+      .lean();
     if (!doc) {
       return res.status(404).json({ message: `Document not found.` });
     }
@@ -205,7 +207,8 @@ export async function getDocsTree(req, res, next) {
 
     const docs = await Doc.find(query)
       .populate("department")
-      .populate("docsCategory");
+      .populate("docsCategory")
+      .lean();
 
     const departmentMap = {};
 

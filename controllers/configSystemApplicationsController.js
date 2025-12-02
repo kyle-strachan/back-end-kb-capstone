@@ -10,10 +10,14 @@ export async function getSystemApplications(req, res, next) {
       query.isActive = true;
     }
 
-    const systemApplications = await SystemApplication.find(query).sort({
-      system: 1,
-    });
-    const systemCategories = await SystemCategory.find().sort({ name: 1 });
+    const systemApplications = await SystemApplication.find(query)
+      .sort({
+        system: 1,
+      })
+      .lean();
+    const systemCategories = await SystemCategory.find()
+      .sort({ name: 1 })
+      .lean();
     // Reject if either are incomplete or empty.
     if (
       !systemApplications ||

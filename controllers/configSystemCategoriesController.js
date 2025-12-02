@@ -4,7 +4,9 @@ const minimumCategoryCharacterLength = 3;
 
 export async function getSystemCategories(req, res, next) {
   try {
-    const systemCategories = await SystemCategory.find().sort({ name: 1 });
+    const systemCategories = await SystemCategory.find()
+      .sort({ name: 1 })
+      .lean();
     if (!systemCategories || systemCategories.length === 0) {
       return res.status(404).json({ message: `No applications found.` });
     }

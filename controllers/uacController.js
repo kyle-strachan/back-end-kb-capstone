@@ -17,7 +17,8 @@ export async function getAccessAssignments(req, res, next) {
     const assignments = await ActiveAccessAssignment.find(filter)
       .populate("userId")
       .populate("completedBy")
-      .populate("applicationId");
+      .populate("applicationId")
+      .lean();
 
     // Continue to return empty array if no assignment are found
 
@@ -64,7 +65,8 @@ export async function getAccessRequests(req, res, next) {
       .populate("requestedBy", "fullName username position")
       .populate("completedBy", "fullName username position")
       .populate("applicationId", "system")
-      .sort({ requestedAt: -1 });
+      .sort({ requestedAt: -1 })
+      .lean();
 
     // Continue to return empty array if no requests are found
 
@@ -356,7 +358,9 @@ export async function getToActionAccessRequests(req, res, next) {
   try {
     const adminSystems = await SystemApplication.find({
       adminUser: req.user._id,
-    }).select("_id");
+    })
+      .select("_id")
+      .lean();
 
     const systemIds = adminSystems.map((s) => s._id);
 
@@ -368,7 +372,8 @@ export async function getToActionAccessRequests(req, res, next) {
       .populate("requestedBy", "fullName username position")
       .populate("completedBy", "fullName username position")
       .populate("applicationId", "system")
-      .sort({ requestedAt: -1 });
+      .sort({ requestedAt: -1 })
+      .lean();
 
     // Count for front-end badges. Perfoming on back-end for not on every re-render on front-end.
     const toActivateTotal = toActionRequests.filter(

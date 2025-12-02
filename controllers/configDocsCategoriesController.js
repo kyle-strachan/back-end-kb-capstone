@@ -14,7 +14,8 @@ export async function getDocsCategories(req, res, next) {
 
     const docsCategories = await DocsCategory.find(filter)
       .populate("departmentId", "department")
-      .sort({ categoryName: 1 });
+      .sort({ categoryName: 1 })
+      .lean();
 
     return res.status(200).json({ docsCategories });
   } catch (error) {

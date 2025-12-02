@@ -4,7 +4,7 @@ const minimumDepartmentCharacterLength = 3;
 
 export async function getDepartments(req, res, next) {
   try {
-    const departments = await Department.find().sort({ department: 1 });
+    const departments = await Department.find().sort({ department: 1 }).lean();
     if (!departments || departments.length === 0) {
       return res.status(404).json({ message: `No departments found.` });
     }

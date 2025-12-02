@@ -8,7 +8,8 @@ export async function getUsers(req, res, next) {
   try {
     const users = await User.find()
       .select("-passwordHash")
-      .sort({ fullName: 1 });
+      .sort({ fullName: 1 })
+      .lean();
     if (!users || users.length === 0) {
       return res.status(404).json({ message: `No users found.` });
     }
@@ -22,7 +23,8 @@ export async function getActiveUsers(req, res, next) {
   try {
     const users = await User.find({ isActive: true })
       .select("-passwordHash")
-      .sort({ fullName: 1 });
+      .sort({ fullName: 1 })
+      .lean();
     if (!users || users.length === 0) {
       return res.status(404).json({ message: `No active users found.` });
     }
@@ -70,7 +72,7 @@ export async function registerUser(req, res, next) {
 
     const existingUsername = await User.findOne({
       username: username.toLowerCase().trim(),
-    });
+    }).lean();
     if (existingUsername) {
       return res.status(400).json({ message: `Username already exists.` });
     }
@@ -173,7 +175,7 @@ export async function terminateUser(req, res, next) {
     }
 
     // Get all active access assignments for user
-    const assignments = await ActiveAccessAssignment.find({ userId });
+    const assignments = await ActiveAccessAssignment.find({ userId }).lean();
 
     // Get array of IDs for revocation flow
     const assignmentIds = assignments.map((a) => a._id.toString());
