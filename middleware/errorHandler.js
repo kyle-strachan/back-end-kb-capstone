@@ -1,7 +1,7 @@
 // Default error handler
 
 export default function errorHandler(err, req, res, next) {
-  // Log full details for diagnostics
+  // Log full details
   console.error(err);
 
   // Default response
