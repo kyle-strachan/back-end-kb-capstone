@@ -2,6 +2,11 @@ import jwt from "jsonwebtoken";
 import User from "../models/users.js";
 import { RolePermissions } from "../utils/permissions.js";
 import { cleanUser } from "../utils/cleanUser.js";
+import {
+  COOKIE_BASE_OPTIONS,
+  ACCESS_TOKEN_MAX_AGE,
+  REFRESH_TOKEN_MAX_AGE,
+} from "../utils/constants.js";
 
 export function signAccessToken(user) {
   return jwt.sign(
@@ -64,25 +69,24 @@ export async function authMiddleware(req, res, next) {
     const user = await User.findById(decodedRefresh.sub);
 
     if (!user || user.tokenVersion !== decodedRefresh.tokenVersion) {
-      return res.status(401).json({ message: "User unauthorised." });
+      return res.status(401).json({ message: "User is not authorised." });
     }
+
+    if (!user.isActive) {
+      return res.status(403).json({ message: "User is not active." });
+    }
+
     const newAccessToken = signAccessToken(user);
     const newRefreshToken = signRefreshToken(user);
 
-    const isProduction = process.env.NODE_ENV === "production";
-
     res.cookie("accessToken", newAccessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      maxAge: 15 * 60 * 1000,
+      ...COOKIE_BASE_OPTIONS,
+      maxAge: ACCESS_TOKEN_MAX_AGE,
     });
 
     res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      ...COOKIE_BASE_OPTIONS,
+      maxAge: REFRESH_TOKEN_MAX_AGE,
     });
 
     // Set user ID for the current request
