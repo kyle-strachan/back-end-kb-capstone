@@ -1,14 +1,14 @@
 import SystemCategory from "../models/configSystemCategories.js";
-
-const minimumCategoryCharacterLength = 3;
+import { MINIMUM_SYSTEM_CATEGORY_LENGTH } from "../utils/constants.js";
+import { isValidObjectId } from "../utils/validation.js";
 
 export async function getSystemCategories(req, res, next) {
   try {
     const systemCategories = await SystemCategory.find()
-      .sort({ name: 1 })
+      .sort({ category: 1 })
       .lean();
     if (!systemCategories || systemCategories.length === 0) {
-      return res.status(404).json({ message: `No applications found.` });
+      return res.status(404).json({ message: `No system categories found.` });
     }
     return res.status(200).json({ systemCategories });
   } catch (error) {
@@ -19,17 +19,28 @@ export async function getSystemCategories(req, res, next) {
 export async function newSystemCategory(req, res, next) {
   try {
     const { category } = req.body;
+    if (typeof category !== "string") {
+      return res.status(400).json({ message: "Invalid system category name." });
+    }
+    const trimmedCategory = category?.trim();
 
-    if (!category || !category.trim()) {
-      return res.status(400).json({ message: "Invalid category name." });
+    // Validate inputs
+    if (
+      !trimmedCategory ||
+      trimmedCategory.length < MINIMUM_SYSTEM_CATEGORY_LENGTH
+    ) {
+      return res.status(400).json({
+        message: `A new system category must have at least ${MINIMUM_SYSTEM_CATEGORY_LENGTH} characters.`,
+      });
     }
 
+    // Create new system category
     await SystemCategory.create({
-      category,
+      category: trimmedCategory,
     });
     return res
       .status(201)
-      .json({ message: `${category} successfully created.` });
+      .json({ message: `${trimmedCategory} created successfully.` });
   } catch (error) {
     next(error);
   }
@@ -43,11 +54,17 @@ export async function editSystemCategory(req, res, next) {
       return res.status(400).json({ message: "No updates provided." });
     }
 
+    // Create array for results, allows multiple edits in one api call.
     const results = [];
 
     // Validate batch promises
     for (const update of updates) {
-      if (!update._id || typeof update.category !== "string") {
+      // Check category is string
+      const category =
+        typeof update.category === "string" ? update.category.trim() : "";
+
+      // Check id and category value
+      if (!update._id || !isValidObjectId(update._id) || !category) {
         results.push({
           id: update._id,
           success: false,
@@ -55,12 +72,13 @@ export async function editSystemCategory(req, res, next) {
         });
         continue;
       }
+
       // Check category name is long enough.
-      if (update.category.trim().length < minimumCategoryCharacterLength) {
+      if (category.length < MINIMUM_SYSTEM_CATEGORY_LENGTH) {
         results.push({
           id: update._id,
           success: false,
-          message: `Category name must be at least ${minimumCategoryCharacterLength} characters`,
+          message: `Category name must be at least ${MINIMUM_SYSTEM_CATEGORY_LENGTH} characters`,
         });
         continue;
       }
@@ -69,10 +87,14 @@ export async function editSystemCategory(req, res, next) {
         const result = await SystemCategory.findByIdAndUpdate(
           update._id,
           {
-            category: update.category.trim(),
-            isActive: !!update.isActive, // in case field is not changed and is null
+            category,
+            ...(update.isActive !== undefined && {
+              isActive: Boolean(
+                update.isActive === true || update.isActive === "true" // Ensure isActive is true boolean
+              ),
+            }),
           },
-          { runValidators: true, new: true, strict: "throw" }
+          { runValidators: true, new: true, strict: "throw" } // Force reject extra fields
         );
         if (!result) {
           results.push({
@@ -80,8 +102,10 @@ export async function editSystemCategory(req, res, next) {
             success: false,
             message: `No matching system category ID found.`,
           });
-          return;
+          continue;
         }
+
+        // Success, update results table
         results.push({ id: update._id, success: true });
       } catch (error) {
         results.push({
@@ -93,7 +117,7 @@ export async function editSystemCategory(req, res, next) {
     }
 
     res.status(200).json({
-      message: "Batch processed.",
+      message: "Updates processed.",
       results,
     });
   } catch (error) {
