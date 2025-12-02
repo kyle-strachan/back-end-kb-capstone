@@ -15,6 +15,7 @@ export const MINIMUM_SYSTEM_CATEGORY_LENGTH = 3;
 export const MINIMUM_DOC_TITLE_LENGTH = 5;
 export const MINIMUM_DOC_DESCRIPTION_LENGTH = 10;
 export const MINIMUM_DOC_BODY_LENGTH = 20;
+export const MINIMUM_DEPARTMENTS = 1;
 
 // Cookies
 export const COOKIE_BASE_OPTIONS = {
