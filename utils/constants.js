@@ -21,7 +21,9 @@ export const MINIMUM_DEPARTMENTS = 1;
 export const COOKIE_BASE_OPTIONS = {
   httpOnly: true,
   secure: IS_PRODUCTION,
-  sameSite: IS_PRODUCTION ? "none" : "lax",
+  // sameSite: IS_PRODUCTION ? "none" : "lax",
+  sameSite: "lax",
+  domain: ".kylestrachan.com",
   path: "/",
 };
 export const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000; // 15 minutes
