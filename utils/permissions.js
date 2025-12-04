@@ -9,6 +9,8 @@ export const RolePermissions = {
     "docs.CanView",
     "users.CanView",
     "users.CanEdit",
+    "users.CanRegister",
+    "users.CanTerminate",
   ],
   HumanResources: [
     "users.CanRegister",
