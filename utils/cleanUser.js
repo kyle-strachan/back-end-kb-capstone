@@ -24,7 +24,7 @@ export function cleanUser(user) {
   if (userPermissions.includes("docsCategories.CanManage") || isSuperAdmin) {
     enableDocsCategories = true;
   }
-  if (userPermissions.includes("system.CanManage") || isSuperAdmin) {
+  if (userPermissions.includes("systems.CanManage") || isSuperAdmin) {
     enableSystems = true;
   }
 
