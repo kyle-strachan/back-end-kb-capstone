@@ -239,7 +239,7 @@ export async function uploadImage(req, res, next) {
     // Sanitize + resize + convert
     const processedImageBuffer = await sharp(req.file.buffer)
       .resize({
-        width: 1000,
+        width: 1200,
         withoutEnlargement: true, // Prevent increasing image size to maximum width
       })
       .webp({ quality: 80 }) // Compressing to match web guidelines for company site
