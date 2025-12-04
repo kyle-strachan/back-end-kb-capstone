@@ -5,25 +5,30 @@ import { MINIMUM_DEPARTMENT_CATEGORY_LENGTH } from "../utils/constants.js";
 export async function getDocsCategories(req, res, next) {
   try {
     const { departmentId, isActive } = req.query;
-    // debugger;
-    // Create optional filter to populate drop down boxes (e.g. New Document drop down).
-    // Leave unfiltered for config screen.
-    let filter = {};
 
+    // SuperAdmin and SystemAdmin can view all
+    const viewAll =
+      req.user.isSuperAdmin || req.user.roles.includes("SystemAdmin");
+
+    // Regular users: only categories where their department matches
+    const filter = viewAll
+      ? {}
+      : { departmentId: { $in: req.user.department } };
+
+    // Optional additional filtering
     if (departmentId) {
       filter.departmentId = departmentId;
+    }
 
-      // Only include isActive filter if explicitly provided
-      if (typeof isActive !== "undefined") {
-        filter.isActive = isActive;
-      }
+    if (typeof isActive !== "undefined") {
+      filter.isActive = isActive === "true";
     }
 
     let docsCategories = await DocsCategory.find(filter)
       .populate("departmentId", "department")
       .lean();
 
-    // Sort by populated department name, then category
+    // Sort by department name then category name
     docsCategories.sort((a, b) => {
       const depA = a.departmentId?.department || "";
       const depB = b.departmentId?.department || "";
@@ -42,6 +47,7 @@ export async function getDocsCategories(req, res, next) {
 
 export async function newDocsCategory(req, res, next) {
   try {
+    // debugger;
     const { departmentId, category } = req.body;
     if (typeof category !== "string") {
       return res.status(400).json({ message: "Invalid category name." });
@@ -62,6 +68,17 @@ export async function newDocsCategory(req, res, next) {
       return res
         .status(400)
         .json({ message: `Department ID is invalid, cannot insert.` });
+    }
+
+    // Check user is a member of this department
+    const canCreate =
+      req.user.isSuperAdmin || req.user.department.includes(departmentId);
+
+    // Reject is user is not a member.
+    if (!canCreate) {
+      return res.status(400).json({
+        message: `Cannot create category, user is not a member of this department.`,
+      });
     }
 
     const newCategory = await DocsCategory.create({
@@ -119,15 +136,34 @@ export async function editDocsCategory(req, res, next) {
         continue;
       }
 
+      // Check user can update this category
+      // Ensure comparing a string and not object.
+      const updateDeptId =
+        update.departmentId && typeof update.departmentId === "object"
+          ? update.departmentId._id
+          : update.departmentId;
+
+      const canEdit =
+        req.user.isSuperAdmin ||
+        (updateDeptId &&
+          req.user.department.some((depId) => depId.equals(updateDeptId)));
+
+      if (!canEdit) {
+        results.push({
+          id: update._id,
+          success: false,
+          message: `User cannot update categories of this department.`,
+        });
+        continue;
+      }
+
       try {
         const result = await DocsCategory.findByIdAndUpdate(
           update._id,
           {
             category: category,
             ...(update.isActive !== undefined && {
-              isActive: Boolean(
-                update.isActive === true || update.isActive === "true" // Ensure isActive is true boolean
-              ),
+              isActive: update.isActive === true || update.isActive === "true", // Ensure isActive is true boolean
             }),
           },
           { runValidators: true, new: true, strict: "throw" } // Force rejecting for extra fields
@@ -140,7 +176,7 @@ export async function editDocsCategory(req, res, next) {
             success: false,
             message: `No matching document category found to update.`,
           });
-          return;
+          continue;
         }
 
         // Success, update results table
