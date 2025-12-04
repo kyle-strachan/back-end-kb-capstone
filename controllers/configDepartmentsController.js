@@ -4,10 +4,19 @@ import { MINIMUM_DEPARTMENT_LENGTH } from "../utils/constants.js";
 
 export async function getDepartments(req, res, next) {
   try {
-    const departments = await Department.find().sort({ department: 1 }).lean();
+    // Filter departments to member departments only
+    const viewAll =
+      req.user.isSuperAdmin || req.user.roles.includes("SystemAdmin");
+    const filter = viewAll ? {} : { _id: { $in: req.user.department } };
+
+    const departments = await Department.find(filter)
+      .sort({ department: 1 })
+      .lean();
+
     if (!departments || departments.length === 0) {
-      return res.status(404).json({ message: `No departments found.` });
+      return res.status(404).json({ message: "No departments found." });
     }
+
     return res.status(200).json({ departments });
   } catch (error) {
     next(error);
