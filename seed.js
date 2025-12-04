@@ -1,8 +1,10 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import User from "./models/users.js";
-import Department from "./models/configDepartment.js";
-import Location from "./models/configLocation.js";
+import Department from "./models/configDepartments.js";
+import Location from "./models/configLocations.js";
+import System from "./models/configSystemApplications.js";
+import Category from "./models/configSystemCategories.js";
 
 dotenv.config();
 
@@ -18,6 +20,16 @@ async function runSeed() {
     // Seed locations
     const defaultLocation = await Location.create({
       location: "Site A",
+    });
+
+    // Seed system
+    const defaultSystem = await System.create({
+      system: "System 1",
+    });
+
+    // Seed system category
+    const defaultCategory = await System.create({
+      category: "Category 1",
     });
 
     // Admin user
