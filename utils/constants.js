@@ -4,8 +4,8 @@ export const IS_PRODUCTION = process.env.NODE_ENV === "production";
 // Input validation
 export const USERNAME_MIN_LENGTH = 3;
 export const PASSWORD_MIN_LENGTH = 8;
-export const REGEX_USERNAME = /^[a-zA-Z0-9_]+$/;
-export const REGEX_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).+$/; // For submission, password complexity has been left light, use 12345678 if required.
+// export const REGEX_USERNAME = /^[a-zA-Z0-9_]+$/; // FOr submission have left only minimum length requirement.
+// export const REGEX_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).+$/; // For submission, using only minimum length requirement.
 export const MINIMUM_LOCATION_LENGTH = 3;
 export const MINIMUM_DEPARTMENT_LENGTH = 3;
 export const MINIMUM_DEPARTMENT_CATEGORY_LENGTH = 3;
