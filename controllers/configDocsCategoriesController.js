@@ -4,13 +4,19 @@ import { MINIMUM_DEPARTMENT_CATEGORY_LENGTH } from "../utils/constants.js";
 
 export async function getDocsCategories(req, res, next) {
   try {
-    const { departmentId } = req.query;
-
+    const { departmentId, isActive } = req.query;
+    // debugger;
     // Create optional filter to populate drop down boxes (e.g. New Document drop down).
     // Leave unfiltered for config screen.
     let filter = {};
+
     if (departmentId) {
-      filter = { departmentId: departmentId };
+      filter.departmentId = departmentId;
+
+      // Only include isActive filter if explicitly provided
+      if (typeof isActive !== "undefined") {
+        filter.isActive = isActive;
+      }
     }
 
     let docsCategories = await DocsCategory.find(filter)
