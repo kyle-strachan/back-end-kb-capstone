@@ -15,7 +15,14 @@ import {
 
 export async function getDocs(req, res, next) {
   try {
-    const docs = await Doc.find()
+    // SuperAdmin and SystemAdmin can view all
+    const viewAll =
+      req.user.isSuperAdmin || req.user.roles.includes("SystemAdmin");
+
+    // Regular users: only categories where their department matches
+    const filter = viewAll ? {} : { department: { $in: req.user.department } };
+
+    const docs = await Doc.find(filter)
       .sort({ title: 1 })
       .populate("createdBy")
       .populate("department", "department")
@@ -106,6 +113,17 @@ export async function newDoc(req, res, next) {
         .json({ message: `Document category ID is invalid.` });
     }
 
+    // Check user is a member of this department
+    const canCreate =
+      req.user.isSuperAdmin || req.user.department.includes(department);
+
+    // Reject is user is not a member.
+    if (!canCreate) {
+      return res.status(403).json({
+        message: `Cannot create document, user is not a member of this department.`,
+      });
+    }
+
     const doc = await Doc.create({
       title,
       description,
@@ -190,6 +208,17 @@ export async function editDoc(req, res, next) {
     const docId = req.params.id;
     if (!isValidObjectId(docId)) {
       return res.status(400).json({ message: "Invalid document ID." });
+    }
+
+    // Check user is a member of this department
+    const canEdit =
+      req.user.isSuperAdmin || req.user.department.includes(department);
+
+    // Reject is user is not a member.
+    if (!canEdit) {
+      return res.status(403).json({
+        message: `Cannot create document, user is not a member of this department.`,
+      });
     }
 
     const updatedDoc = await Doc.findByIdAndUpdate(
