@@ -11,6 +11,7 @@ import {
   PASSWORD_MIN_LENGTH,
 } from "../utils/constants.js";
 import logEvent from "../utils/log.js";
+import { isValidObjectId } from "../utils/validation.js";
 
 export async function login(req, res) {
   try {
