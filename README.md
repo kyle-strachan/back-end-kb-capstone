@@ -55,7 +55,7 @@ npm install
 Create a .env file in the back end's root directory with unique access and refresh secrets.
 ```
 # MongoDB Connection String
-MONGO_URI=mongodb://localhost:27017/[your-db-name]
+MONGO_URI=mongodb://localhost:27017/lobbylock
 
 # Server Configuration
 PORT=3000
