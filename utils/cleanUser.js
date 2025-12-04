@@ -57,6 +57,12 @@ export function cleanUser(user) {
     enableDocs = true;
   }
 
+  // User control
+  let enableTerminate = false;
+  if (userPermissions.includes("users.CanTerminate") || isSuperAdmin) {
+    enableTerminate = true;
+  }
+
   return {
     _id: user._id,
     fullName: user.fullName,
@@ -74,6 +80,7 @@ export function cleanUser(user) {
       enableDocs,
       enableUserEdit,
       enableUserCreate,
+      enableTerminate,
     },
   };
 }
