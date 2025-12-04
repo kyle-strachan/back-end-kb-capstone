@@ -25,6 +25,7 @@ async function runSeed() {
     // Seed system
     const defaultSystem = await System.create({
       system: "System 1",
+      sendEmail: false,
     });
 
     // Seed system category
