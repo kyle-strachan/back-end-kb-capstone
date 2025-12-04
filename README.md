@@ -73,7 +73,7 @@ WASABI_SECRET=
 WASABI_BUCKET=
 
 # CORS - add front and back end ports as required for local hosting.
-CORS_ORIGINS=http://localhost:XXXX,http://localhost:XXXX
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 
 ```
 
