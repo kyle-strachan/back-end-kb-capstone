@@ -37,6 +37,7 @@ export async function getDocs(req, res, next) {
   }
 }
 
+// Get single document
 export async function getDoc(req, res, next) {
   try {
     const docId = req.params.id;
@@ -51,9 +52,24 @@ export async function getDoc(req, res, next) {
       .populate("department")
       .populate("docsCategory")
       .lean();
+
     if (!doc) {
       return res.status(404).json({ message: `Document not found.` });
     }
+
+    // Check user is a member of this department
+    const canView =
+      req.user.isSuperAdmin ||
+      req.user.department.includes(doc.department) ||
+      doc.isPublic;
+
+    // Reject is user is not a member.
+    if (!canView) {
+      return res.status(403).json({
+        message: `User does not have permission to view this document.`,
+      });
+    }
+
     return res.status(200).json({ doc });
   } catch (error) {
     next(error);
@@ -261,11 +277,12 @@ export async function uploadImage(req, res, next) {
       return res.status(404).json({ message: "Document does not exist." });
     }
 
+    // Confirm a file exists to upload
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // Sanitize + resize + convert
+    // Sanitize, resize, convert
     const processedImageBuffer = await sharp(req.file.buffer)
       .resize({
         width: 1200,
@@ -292,7 +309,7 @@ export async function uploadImage(req, res, next) {
       })
     );
 
-    // AFTER successfully uploading to Wasabi:
+    // After successfully uploading to Wasabi, get signed URL to display image
     const signedUrl = await getSignedUrl(
       wasabi,
       new GetObjectCommand({ Bucket, Key }),
@@ -409,7 +426,7 @@ export async function getDocsSearch(req, res, next) {
     };
 
     if (!isSuperAdmin) {
-      // Restrict normal users to their department plus (OR) public docs
+      // Restrict normal users to their department plus or public docs
       filter.$or = [
         { isPublic: true },
         { department: { $in: req.user.department } },
