@@ -81,6 +81,7 @@ For production environments, add `NODE_ENV=production` for HTTPS cookie transmis
 
 #### Run locally
 ```
+npm run seed
 npm start
 ```
 
