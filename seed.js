@@ -146,6 +146,10 @@ async function run() {
     docsCategory: catC._id,
   });
 
+  console.log("Seed complete. Login using:");
+  console.log("Username: admin");
+  console.log("Password: admin123");
+
   process.exit(0);
 }
 
