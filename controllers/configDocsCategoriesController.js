@@ -47,7 +47,6 @@ export async function getDocsCategories(req, res, next) {
 
 export async function newDocsCategory(req, res, next) {
   try {
-    // debugger;
     const { departmentId, category } = req.body;
     if (typeof category !== "string") {
       return res.status(400).json({ message: "Invalid category name." });
