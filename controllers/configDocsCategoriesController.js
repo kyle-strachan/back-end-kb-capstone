@@ -75,8 +75,18 @@ export async function newDocsCategory(req, res, next) {
 
     // Reject is user is not a member.
     if (!canCreate) {
-      return res.status(400).json({
+      return res.status(403).json({
         message: `Cannot create category, user is not a member of this department.`,
+      });
+    }
+
+    const existing = await DocsCategory.findOne({
+      departmentId: departmentId,
+      category: trimmedCategory,
+    });
+    if (existing) {
+      return res.status(400).json({
+        message: `Cannot create duplicate category.`,
       });
     }
 
