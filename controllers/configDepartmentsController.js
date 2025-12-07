@@ -5,11 +5,21 @@ import { MINIMUM_DEPARTMENT_LENGTH } from "../utils/constants.js";
 export async function getDepartments(req, res, next) {
   try {
     // Filter departments to member departments only
-    const viewAll =
-      req.user.isSuperAdmin || req.user.roles.includes("SystemAdmin");
-    const filter = viewAll
-      ? {}
-      : { _id: { $in: req.user.department }, isActive: true }; // Only show active departments to non-admin.
+    let filter = {};
+
+    if (req.user.isSuperAdmin) {
+      // No filter for superAdmin
+      filter = {};
+    } else if (req.user.roles.includes("HumanResources")) {
+      // HR sees all active departments (to create new users)
+      filter = { isActive: true };
+    } else {
+      // Everyone else (e.g. creating docs) sees only their assigned active departments
+      filter = {
+        _id: { $in: req.user.department },
+        isActive: true,
+      };
+    }
 
     const departments = await Department.find(filter)
       .sort({ department: 1 })
