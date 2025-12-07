@@ -13,8 +13,13 @@ const demoDepartment = "690ebd021ee02712c8dcdfb4"; // Front Office
 
 app.use(express.json());
 
+// All tests bypass middleware permission guard to test only controller function
 app.get("/docs-categories", (req, res, next) => {
-  req.user = { isSuperAdmin: false, roles: [], department: [] };
+  req.user = { isSuperAdmin: false, roles: [], department: [demoDepartment] };
+  return getDocsCategories(req, res, next);
+});
+app.get("/docs-categories-super", (req, res, next) => {
+  req.user = { isSuperAdmin: true, roles: [], department: [demoDepartment] };
   return getDocsCategories(req, res, next);
 });
 app.post("/new-docs-category", (req, res, next) => {
@@ -41,6 +46,35 @@ describe("Docs Categories Controller", () => {
     // Reset between tests
     await DocsCategories.deleteMany({});
   });
+
+  // it("should return array with one result", async () => {
+  //   await request(app)
+  //     .post("/new-docs-category")
+  //     .send({ departmentId: demoDepartment, category: "Test" });
+  //   await request(app)
+  //     .post("/new-docs-category")
+  //     .send({ departmentId: "6914a9ed66b6d91e0eda5b15", category: "Test2" }); // Only return departments user is member of
+  //   const res = await request(app).get("/docs-categories");
+  //   expect(res.status).to.equal(200);
+  //   const categories = res.body.docsCategories.map((c) => c.category);
+  //   expect(categories).to.include("Test");
+  //   expect(categories).to.not.include("Test2");
+  // });
+
+  // it("should return array with all results (super admin)", async () => {
+  //   await request(app)
+  //     .post("/new-docs-category-super")
+  //     .send({ departmentId: demoDepartment, category: "Test" });
+  //   await request(app)
+  //     .post("/new-docs-category")
+  //     .send({ departmentId: "6914a9ed66b6d91e0eda5b15", category: "Test2" });
+  //   const res = await request(app).get("/docs-categories");
+  //   expect(res.status).to.equal(200);
+  //   const categories = res.body.docsCategories.map((c) => c.category);
+  //   expect(categories).to.include("Test");
+  //   expect(categories).to.not.include("Test2");
+  // });
+
   it("should reject too short category name", async () => {
     const res = await request(app)
       .post("/new-docs-category")
