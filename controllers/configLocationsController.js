@@ -4,6 +4,11 @@ import { isValidObjectId } from "../utils/validation.js";
 
 export async function getLocations(req, res, next) {
   try {
+    // Filter to active locations if not admin
+    const viewAll =
+      req.user.isSuperAdmin || req.user.roles.includes("SystemAdmin");
+    const filter = viewAll ? {} : { isActive: true }; // Only show active locations to non-admin.
+
     const locations = await Location.find().sort({ location: 1 }).lean();
     if (!locations || locations.length === 0) {
       return res.status(404).json({ message: `No locations found.` });
