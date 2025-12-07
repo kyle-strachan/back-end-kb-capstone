@@ -40,7 +40,7 @@ router.get(
   "/locations",
   authMiddleware,
   attachUser,
-  requirePermission("locations.CanManage"),
+  // requirePermission("locations.CanManage"), // Removed, required to populate drop down
   getLocations
 ); // Get all locations
 router.post(
