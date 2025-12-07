@@ -14,7 +14,9 @@ export async function getDepartments(req, res, next) {
       .lean();
 
     if (!departments || departments.length === 0) {
-      return res.status(404).json({ message: "No departments found." });
+      return res
+        .status(404)
+        .json({ message: "No departments found in user's membership." });
     }
 
     return res.status(200).json({ departments });

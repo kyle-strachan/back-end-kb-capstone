@@ -5,7 +5,6 @@ import { MINIMUM_DEPARTMENT_CATEGORY_LENGTH } from "../utils/constants.js";
 export async function getDocsCategories(req, res, next) {
   try {
     const { departmentId, isActive } = req.query;
-
     // SuperAdmin and SystemAdmin can view all
     const viewAll =
       req.user.isSuperAdmin || req.user.roles.includes("SystemAdmin");
