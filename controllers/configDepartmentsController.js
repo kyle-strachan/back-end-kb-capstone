@@ -7,7 +7,9 @@ export async function getDepartments(req, res, next) {
     // Filter departments to member departments only
     const viewAll =
       req.user.isSuperAdmin || req.user.roles.includes("SystemAdmin");
-    const filter = viewAll ? {} : { _id: { $in: req.user.department } };
+    const filter = viewAll
+      ? {}
+      : { _id: { $in: req.user.department }, isActive: true }; // Only show active departments to non-admin.
 
     const departments = await Department.find(filter)
       .sort({ department: 1 })
